@@ -13,5 +13,10 @@ setup(
     include_package_data=True,
     install_requires=[
         'django-wkhtmltopdf==3.1.0',
-    ]
+    ],
+    extras_require={  # pip install -e .[dev]
+        'dev': [
+            'flake8',
+        ]
+    }
 )
