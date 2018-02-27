@@ -14,7 +14,7 @@ from mezzanine.core.models import RichText, TimeStamped
 from mezzanine.pages.models import Page
 
 
-class Survey(Page, RichText):
+class SurveyPage(Page, RichText):
     """
     Survey that contains a certain amount of questions.
     """
@@ -30,8 +30,8 @@ class Survey(Page, RichText):
         help_text=_("Helping content shown before the results' detail"))
 
     class Meta:
-        verbose_name = _("survey")
-        verbose_name_plural = _("surveys")
+        verbose_name = _("survey page")
+        verbose_name_plural = _("survey pages")
 
 
 @python_2_unicode_compatible
@@ -39,11 +39,11 @@ class SurveyPurchaseCode(models.Model):
     """
     Code to gain access to a Survey
     """
-    survey = models.ForeignKey(Survey, related_name="codes")
+    survey = models.ForeignKey(SurveyPage, related_name="purchase_codes")
     code = models.CharField(
         _("Code"), max_length=20, blank=True,
         help_text=_("If left blank it will be automatically generated"))
-    uses_remaining = models.IntegerField(default=0)
+    uses_remaining = models.PositiveIntegerField(_("Remaining uses"), default=0)
 
     class Meta:
         verbose_name = _("purchase code")
@@ -65,14 +65,13 @@ class SurveyPurchaseCode(models.Model):
 @python_2_unicode_compatible
 class SurveyPurchase(TimeStamped):
     """
-    The purchase of a Survey
+    A record of a user purchasing a Survey.
     """
-    survey = models.ForeignKey(Survey, related_name="purchases")
+    survey = models.ForeignKey(SurveyPage, related_name="purchases")
     purchaser = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="surveys")
     purchased_with_code = models.ForeignKey(SurveyPurchaseCode, blank=True, null=True)
     public_id = models.UUIDField(db_index=True, default=uuid.uuid4, editable=False)
 
-    billing_zipcode = models.CharField(_("Billing Zipcode"), max_length=20)
     name = models.CharField(_("Name"), max_length=200)
     email = models.EmailField(_("Email"), max_length=300)
     transaction_id = models.CharField(_("Transaction ID"), max_length=200, blank=True)
@@ -86,20 +85,3 @@ class SurveyPurchase(TimeStamped):
 
     def __str__(self):
         return "%s | %s" % (self.survey, self.name)
-
-    def completed(self):
-        """
-        Determine if an assessment has been completed.
-        """
-        return False if self.report_generated is None else True
-
-    @property
-    def ready_to_report(self):
-        """
-        Check that at least there's one response for the Survey
-        """
-        assessors = self.assessors.exclude(assessment_taken__isnull=True)
-        has_enough_assessors = assessors.count() >= 2  # Self + 1 third-party
-        has_self_assessment = assessors.filter(is_person_being_assessed=True).exists()
-        not_reported = self.report_generated is None
-        return not_reported and has_enough_assessors and has_self_assessment

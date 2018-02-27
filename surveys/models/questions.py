@@ -11,7 +11,7 @@ from django.utils.translation import ugettext_lazy as _
 from mezzanine.core.fields import RichTextField
 from mezzanine.core.models import Orderable
 
-from ..models import Survey
+from ..models import SurveyPage
 
 
 @python_2_unicode_compatible
@@ -51,7 +51,7 @@ class Subcategory(Orderable):
 @python_2_unicode_compatible
 class Question(Orderable):
     """
-    A question on a Survey
+    A question on a SurveyPage
     """
     RATING_FIELD = 1
     TEXT_FIELD = 2
@@ -60,7 +60,7 @@ class Question(Orderable):
         (TEXT_FIELD, "Text"),
     )
 
-    survey = models.ForeignKey(Survey, related_name="questions")
+    survey = models.ForeignKey(SurveyPage, related_name="questions")
     subcategory = models.ForeignKey(Subcategory, related_name="questions", blank=True, null=True)
 
     field_type = models.IntegerField(_("Question type"), choices=QUESTION_TYPES)
@@ -86,8 +86,7 @@ class QuestionResponse(models.Model):
     """
     Response to a Question
     """
-    question = models.ForeignKey(Question)
-    prompt = models.CharField(_("Prompt"), max_length=200)
+    question = models.ForeignKey(Question, related_name="responses")
     rating = models.PositiveSmallIntegerField(_("Rating"), blank=True, null=True)
     text_response = models.TextField(_("Text response"), blank=True)
 

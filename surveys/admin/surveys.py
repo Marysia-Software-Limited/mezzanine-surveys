@@ -10,7 +10,7 @@ from django.utils.translation import ugettext_lazy as _
 from mezzanine.core.admin import TabularDynamicInlineAdmin
 from mezzanine.pages.admin import PageAdmin
 
-from ..models import Survey, Question, SurveyPurchase, SurveyPurchaseCode
+from ..models import SurveyPage, Question, SurveyPurchase, SurveyPurchaseCode
 
 
 survey_fieldsets = [
@@ -40,8 +40,8 @@ class QuestionInline(TabularDynamicInlineAdmin):
     model = Question
 
 
-@admin.register(Survey)
-class SurveyAdmin(PageAdmin):
+@admin.register(SurveyPage)
+class SurveyPageAdmin(PageAdmin):
     fieldsets = survey_fieldsets
     inlines = [SurveyPurchaseCodeInline, QuestionInline]
 
