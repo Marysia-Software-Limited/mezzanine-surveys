@@ -1,0 +1,23 @@
+{% extends "pages/page.html" %}
+{% load mezzanine_tags %}
+
+{% block main %}
+	<h4>Register for your purchase</h4>
+
+	<form id="survey-payment-form" action="" method="POST">
+		{% errors_for form %}
+		{% csrf_token %}
+
+		{# Basic info #}
+			{% fields_for form.name %}
+			{% fields_for form.email %}
+			<hr>
+
+		{# Payment Information #}
+			<h4>Payment Information</h4>
+			{% fields_for form.purchase_code %}
+			<button type="submit" class="btn btn-warning">Submit</button>
+
+	</form>
+
+{% endblock main %}

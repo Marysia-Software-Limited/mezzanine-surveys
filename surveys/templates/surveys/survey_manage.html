@@ -1,0 +1,64 @@
+{% extends "pages/page.html" %}
+{% load mezzanine_tags %}
+
+{% block extra_head %}
+	<script>
+		$(document).ready(function() {
+			// Tooltips
+			$('.js-tooltip').tooltip();
+
+			// Copy to clipboard
+			$('.js-copy').click(function() {
+				var $this = $(this);
+				var originalText = $this.attr('data-original-title');
+
+				var surveyUrl = document.getElementById("survey-url");
+				surveyUrl.select();
+
+				try {
+					document.execCommand('copy');
+					$this.attr('data-original-title', 'Copied!').tooltip('show');
+				} catch (error) {
+					console.log('Oops, unable to copy');
+				}
+
+				$this.attr('data-original-title', originalText);
+			});
+		});
+	</script>
+{% endblock extra_head %}
+
+{% block main %}
+	<h2>{{ survey.title }}</h2>
+	{{ survey.purchase_response|richtext_filters|safe }}
+
+	{# Survey overview #}
+		<table class="table">
+			<thead>
+				<tr>
+					<th>Date Created</th>
+					{% if survey.expiry_date %}<th>Close Date</th>{% endif %}
+					<th>Respondants</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>{{ survey.publish_date|date:"j.m.y" }}</td>
+					{% if survey.expiry_date %}<td>{{ survey.expiry_date|date:"j.m.y" }}</td>{% endif %}
+					<td>{{ num_of_responses }}</td>
+				</tr>
+			</tbody>
+		</table>
+
+	{# Survey sharing link #}
+		<div class="input-group">
+			<input id="survey-url" type="text" class="form-control" value="{{ request.scheme }}://{{ request.get_host }}{% url "surveys:take" purchase.public_id %}">
+			<span class="input-group-btn">
+				<button class="btn btn-warning js-tooltip js-copy" type="button" title="Copy to clipboard"
+				data-toggle="tooltip">Copy</button>
+			</span>
+		</div>
+
+		<hr>
+
+{% endblock main %}

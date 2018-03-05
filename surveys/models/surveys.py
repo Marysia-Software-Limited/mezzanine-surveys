@@ -5,6 +5,8 @@ from __future__ import unicode_literals
 import uuid
 
 from django.db import models
+from django.db.models import Max
+from django.core.urlresolvers import reverse
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
 
@@ -28,6 +30,14 @@ class SurveyPage(Page, RichText):
     report_explanation = RichTextField(
         _("Explanation"),
         help_text=_("Helping content shown before the results' detail"))
+
+    def get_max_rating(self):
+        """
+        Gets the max value for the 'max_rating' field in this survey's questions.
+        This will not get you the maximum score of the responses, but rather the max
+        allowed value for all instances of this assessment.
+        """
+        return self.questions.aggregate(Max("max_rating")).values()[0]
 
     class Meta:
         verbose_name = _("survey page")
@@ -78,6 +88,9 @@ class SurveyPurchase(TimeStamped):
     charge_details = models.TextField(_("Charge details"), blank=True)
 
     report_generated = models.DateTimeField(_("Report generated"), blank=True, null=True)
+
+    def get_absolute_url(self):
+        return reverse("surveys:manage", kwargs={"public_id": self.public_id})
 
     class Meta:
         verbose_name = _("purchase")
