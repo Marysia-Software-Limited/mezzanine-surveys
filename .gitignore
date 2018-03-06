@@ -4,3 +4,4 @@
 *.egg-info
 *.sublime-*
 .vscode
+.pytest_cache
