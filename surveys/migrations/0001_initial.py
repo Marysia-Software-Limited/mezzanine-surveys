@@ -2,17 +2,17 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
-import uuid
 from django.conf import settings
-import mezzanine.core.fields
 import django.core.validators
+import uuid
+import mezzanine.core.fields
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pages', '0003_auto_20150527_1555'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        ('pages', '0003_auto_20150527_1555'),
     ]
 
     operations = [
@@ -51,7 +51,6 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', primary_key=True, serialize=False, auto_created=True)),
                 ('rating', models.PositiveSmallIntegerField(verbose_name='Rating', blank=True, null=True)),
                 ('text_response', models.TextField(verbose_name='Text response', blank=True)),
-                ('question', models.ForeignKey(related_name='responses', to='surveys.Question')),
             ],
         ),
         migrations.CreateModel(
@@ -132,6 +131,16 @@ class Migration(migrations.Migration):
             model_name='surveypurchase',
             name='survey',
             field=models.ForeignKey(related_name='purchases', to='surveys.SurveyPage'),
+        ),
+        migrations.AddField(
+            model_name='questionresponse',
+            name='purchase',
+            field=models.ForeignKey(related_name='responses', to='surveys.SurveyPurchase'),
+        ),
+        migrations.AddField(
+            model_name='questionresponse',
+            name='question',
+            field=models.ForeignKey(related_name='responses', to='surveys.Question'),
         ),
         migrations.AddField(
             model_name='question',

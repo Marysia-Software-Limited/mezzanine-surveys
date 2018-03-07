@@ -11,7 +11,7 @@ from django.utils.translation import ugettext_lazy as _
 from mezzanine.core.fields import RichTextField
 from mezzanine.core.models import Orderable
 
-from ..models import SurveyPage
+from ..models import SurveyPage, SurveyPurchase
 
 
 @python_2_unicode_compatible
@@ -84,9 +84,11 @@ class Question(Orderable):
 
 class QuestionResponse(models.Model):
     """
-    Response to a Question
+    Response to a Question related to a Purchase.
     """
-    question = models.ForeignKey(Question, related_name="responses")
+    purchase = models.ForeignKey(
+        SurveyPurchase, related_name="responses", on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, related_name="responses", on_delete=models.CASCADE)
     rating = models.PositiveSmallIntegerField(_("Rating"), blank=True, null=True)
     text_response = models.TextField(_("Text response"), blank=True)
 
@@ -94,6 +96,6 @@ class QuestionResponse(models.Model):
         """
         Invert the given rating if the question requires it.
         """
-        if self.rating is not None and self.question.invert_rating:
+        if not self.pk and self.rating is not None and self.question.invert_rating:
             self.rating = self.question.max_rating - int(self.rating) + 1
         super(QuestionResponse, self).save(*args, **kwargs)
