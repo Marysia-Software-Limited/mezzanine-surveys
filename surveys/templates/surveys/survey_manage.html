@@ -45,7 +45,7 @@
 				<tr>
 					<td>{{ survey.publish_date|date:"j.m.y" }}</td>
 					{% if survey.expiry_date %}<td>{{ survey.expiry_date|date:"j.m.y" }}</td>{% endif %}
-					<td>{{ num_of_responses }}</td>
+					<td>{{ num_responses }}</td>
 				</tr>
 			</tbody>
 		</table>

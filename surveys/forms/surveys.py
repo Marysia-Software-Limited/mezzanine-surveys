@@ -14,15 +14,7 @@ class SurveyPurchaseForm(UXFormMixin, forms.ModelForm):
     """
     Base class inherited by a payment gateway form.
     """
-    name = forms.CharField(
-        label=_("Name"),
-        widget=forms.TextInput(attrs={"placeholder": _("Your Name")}))
-    email = forms.CharField(
-        label=_("Email"),
-        widget=forms.TextInput(attrs={"placeholder": _("Your Email")}))
-    purchase_code = forms.CharField(
-        label=_("I Have a Code"), required=False,
-        widget=forms.TextInput(attrs={"placeholder": _("Enter code")}))
+    purchase_code = forms.CharField(label=_("Purchase Code"), required=False)
 
     class Meta:
         model = SurveyPurchase
@@ -33,6 +25,7 @@ class SurveyTakeForm(UXFormMixin, forms.Form):
     """
     Form that an user uses to answer a Survey
     """
+
     def __init__(self, survey, *args, **kwargs):
         """
         Add each form field to the form
@@ -59,6 +52,5 @@ class SurveyTakeForm(UXFormMixin, forms.Form):
             # Use the HTML5 required attribute
             if question.required:
                 field.widget.attrs["required"] = ""
-                field.label = '%s*' % unicode(field.label)
 
             self.fields[field_key] = field

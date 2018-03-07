@@ -35,9 +35,9 @@ class SurveyPage(Page, RichText):
         """
         Gets the max value for the 'max_rating' field in this survey's questions.
         This will not get you the maximum score of the responses, but rather the max
-        allowed value for all instances of this assessment.
+        allowed value for all instances of this survey.
         """
-        return self.questions.aggregate(Max("max_rating")).values()[0]
+        return self.questions.aggregate(Max("max_rating"))["max_rating__max"]
 
     class Meta:
         verbose_name = _("survey page")
