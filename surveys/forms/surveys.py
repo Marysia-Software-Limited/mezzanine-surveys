@@ -18,7 +18,7 @@ class SurveyPurchaseForm(UXFormMixin, forms.ModelForm):
 
     class Meta:
         model = SurveyPurchase
-        fields = ["name", "email"]
+        fields = []  # No model fields are user-editable
 
 
 class SurveyTakeForm(UXFormMixin, forms.Form):

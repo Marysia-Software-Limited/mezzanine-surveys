@@ -79,22 +79,25 @@ class SurveyPurchase(TimeStamped):
     """
     survey = models.ForeignKey(SurveyPage, related_name="purchases")
     purchaser = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="surveys")
-    purchased_with_code = models.ForeignKey(SurveyPurchaseCode, blank=True, null=True)
     public_id = models.UUIDField(db_index=True, default=uuid.uuid4, editable=False)
 
-    name = models.CharField(_("Name"), max_length=200)
-    email = models.EmailField(_("Email"), max_length=300)
     transaction_id = models.CharField(_("Transaction ID"), max_length=200, blank=True)
-    charge_details = models.TextField(_("Charge details"), blank=True)
+    payment_method = models.CharField(_("Payment method"), max_length=100, blank=True)
+    amount = models.DecimalField(
+        _("Amount"), max_digits=8, decimal_places=2, blank=True, null=True)
+    notes = models.TextField(_("Notes"), blank=True)
 
     report_generated = models.DateTimeField(_("Report generated"), blank=True, null=True)
 
     def get_absolute_url(self):
-        return reverse("surveys:manage", kwargs={"public_id": self.public_id})
+        return reverse("surveys:manage", args=[self.public_id])
+
+    def get_public_url(self):
+        return reverse("surveys:take", args=[self.public_id])
 
     class Meta:
         verbose_name = _("purchase")
         verbose_name_plural = _("purchases")
 
     def __str__(self):
-        return "%s | %s" % (self.survey, self.name)
+        return str(self.survey)

@@ -72,9 +72,9 @@ class SurveyPurchaseView(LoginRequiredMixin, FormMessagesMixin, generic.CreateVi
         except IntegrityError:  # Raised when uses_remaining becomes negative
             raise ValidationError(_("The code you entered is no longer available"))
 
-        form.instance.purchased_with_code = code
+        form.instance.amount = 0
         form.instance.transaction_id = purchase_code
-        form.instance.charge_details = _("Survey purchased using code %s" % purchase_code)
+        form.instance.payment_method = "Purchase Code"
 
     def process_payment(self, form):
         """
@@ -82,7 +82,8 @@ class SurveyPurchaseView(LoginRequiredMixin, FormMessagesMixin, generic.CreateVi
         Sets the charge details and transaction ID for the SurveyPurchase.
         """
         form.instance.transaction_id = "--"
-        form.instance.charge_details = _("Survey cost: $%s" % self.survey.cost)
+        form.instance.payment_method = "Demo"
+        form.instance.amount = form.instance.survey.cost
 
 
 class SurveyManageView(LoginRequiredMixin, generic.TemplateView):
@@ -99,11 +100,9 @@ class SurveyManageView(LoginRequiredMixin, generic.TemplateView):
 
     def get_context_data(self, **kwargs):
         survey = self.purchase.survey
-        num_responses = QuestionResponse.objects.filter(question__survey=survey).count()
         kwargs.update({
             "purchase": self.purchase,
             "survey": survey,
-            "num_responses": num_responses,
         })
         return super(SurveyManageView, self).get_context_data(**kwargs)
 

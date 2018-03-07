@@ -1,6 +1,8 @@
 {% extends "pages/page.html" %}
 {% load mezzanine_tags %}
 
+{% block meta_title %}{{ survey }}{% endblock %}
+
 {% block extra_head %}
 	<script>
 		$(document).ready(function() {
@@ -37,22 +39,21 @@
 			<thead>
 				<tr>
 					<th>Date Created</th>
-					{% if survey.expiry_date %}<th>Close Date</th>{% endif %}
-					<th>Respondants</th>
+					<th>Responses</th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr>
-					<td>{{ survey.publish_date|date:"j.m.y" }}</td>
-					{% if survey.expiry_date %}<td>{{ survey.expiry_date|date:"j.m.y" }}</td>{% endif %}
-					<td>{{ num_responses }}</td>
+					<td>{{ survey.publish_date|date }}</td>
+					<td>{{ purchase.responses.count }}</td>
 				</tr>
 			</tbody>
 		</table>
 
 	{# Survey sharing link #}
+		<label for="survey-url">Public URL</label>
 		<div class="input-group">
-			<input id="survey-url" type="text" class="form-control" value="{{ request.scheme }}://{{ request.get_host }}{% url "surveys:take" purchase.public_id %}">
+			<input id="survey-url" type="text" class="form-control" value="{{ request.scheme }}://{{ request.get_host }}{{ purchase.get_public_url }}">
 			<span class="input-group-btn">
 				<button class="btn btn-warning js-tooltip js-copy" type="button" title="Copy to clipboard"
 				data-toggle="tooltip">Copy</button>

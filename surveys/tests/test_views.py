@@ -1,7 +1,5 @@
 from __future__ import absolute_import, unicode_literals
 
-from copy import copy
-
 from django.contrib.auth.models import User
 from django.test import TestCase, override_settings
 
@@ -14,8 +12,6 @@ from mezzy.utils.tests import ViewTestMixin
 from surveys.models import SurveyPage, SurveyPurchase, SurveyPurchaseCode
 from surveys.tests import urls_with_surveys
 from surveys.views import SurveyPurchaseView, SurveyManageView
-
-PURCHASE_DATA = {"name": "Test", "email": "test@test.com"}
 
 
 class BaseSurveyPageTest(ViewTestMixin, TestCase):
@@ -52,7 +48,7 @@ class SurveyPurchaseTestCase(BaseSurveyPageTest):
         """
         valid_code = get(SurveyPurchaseCode, survey=self.SURVEY, uses_remaining=10)
         depleted_code = get(SurveyPurchaseCode, survey=self.SURVEY, uses_remaining=0)
-        data = copy(PURCHASE_DATA)
+        data = {}
 
         # Test invalid purchase code is rejected
         data["purchase_code"] = "invalid"
@@ -63,8 +59,10 @@ class SurveyPurchaseTestCase(BaseSurveyPageTest):
         data["purchase_code"] = depleted_code.code
         self.post(SurveyPurchaseView, slug=self.SURVEY.slug, user=self.USER, data=data)
         self.assertEqual(SurveyPurchase.objects.count(), 0)
+        depleted_code.refresh_from_db()
+        self.assertEqual(depleted_code.uses_remaining, 0)
 
-        # Test valid code is accepted
+        # Test valid code is accepted and purchase is created
         data["purchase_code"] = valid_code.code
         response = self.post(SurveyPurchaseView, slug=self.SURVEY.slug, user=self.USER, data=data)
         purchase = SurveyPurchase.objects.get()
@@ -72,6 +70,8 @@ class SurveyPurchaseTestCase(BaseSurveyPageTest):
         self.assertEqual(purchase.purchaser, self.USER)
         self.assertEqual(purchase.survey, self.SURVEY)
         self.assertEqual(purchase.transaction_id, valid_code.code)
+        self.assertEqual(purchase.payment_method, "Purchase Code")
+        self.assertEqual(purchase.amount, 0)
 
         # Test code uses have been reduced by 1
         valid_code.refresh_from_db()
@@ -81,15 +81,14 @@ class SurveyPurchaseTestCase(BaseSurveyPageTest):
         """
         Purchases completed via the default payment method (doesn't do anything).
         """
-        data = copy(PURCHASE_DATA)
-
         # Test the new purchase was created successfully
-        response = self.post(SurveyPurchaseView, slug=self.SURVEY.slug, user=self.USER, data=data)
+        response = self.post(SurveyPurchaseView, slug=self.SURVEY.slug, user=self.USER)
         purchase = SurveyPurchase.objects.get()
         self.assertEqual(response["location"], purchase.get_absolute_url())
         self.assertEqual(purchase.purchaser, self.USER)
         self.assertEqual(purchase.survey, self.SURVEY)
-        self.assertEqual(purchase.transaction_id, "--")
+        self.assertEqual(purchase.payment_method, "Demo")
+        self.assertEqual(purchase.amount, self.SURVEY.cost)
 
 
 class SurveyMangeTestCase(BaseSurveyPageTest):
