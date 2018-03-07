@@ -21,12 +21,13 @@ setup(
     zip_safe=False,
     packages=find_packages(),
     include_package_data=True,
-    test_suite="conftest.django_configure",
     tests_require=[
         'pytest-django>=3.1,<3.2',
-        'flake8>=3.5<3.6',
+        'django-dynamic-fixture>=2.0,<2.1',
+        'flake8>=3.5,<3.6',
     ],
     install_requires=[
         'django-wkhtmltopdf==3.1.0',
+        'mezzy==2.1.1',
     ]
 )
