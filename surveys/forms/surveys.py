@@ -1,4 +1,4 @@
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
 from future.builtins import zip
 
@@ -7,7 +7,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from mezzy.utils.forms import UXFormMixin
 
-from ..models import SurveyPurchase, Question
+from ..models import SurveyPurchase, SurveyResponse, Question, QuestionResponse
 
 
 class SurveyPurchaseForm(UXFormMixin, forms.ModelForm):
@@ -21,23 +21,26 @@ class SurveyPurchaseForm(UXFormMixin, forms.ModelForm):
         fields = []  # No model fields are user-editable
 
 
-class SurveyTakeForm(UXFormMixin, forms.Form):
+class SurveyResponseForm(UXFormMixin, forms.ModelForm):
     """
     Form that an user uses to answer a Survey
     """
 
-    def __init__(self, survey, *args, **kwargs):
-        """
-        Add each form field to the form
-        """
-        super(SurveyTakeForm, self).__init__(*args, **kwargs)
+    class Meta:
+        model = SurveyResponse
+        fields = []  # No model fields are user-editable
 
-        for question in survey.questions.all().order_by("field_type"):
-            field_key = "field_%s" % question.id
-            field_type = question.field_type
+    def __init__(self, *args, **kwargs):
+        """
+        Create dynamic fields for each question in the SurveyPage.
+        """
+        self.purchase = kwargs.pop("purchase")
+        super(SurveyResponseForm, self).__init__(*args, **kwargs)
 
-            # Question is a RadioSelect field
-            if field_type == Question.RATING_FIELD:
+        for question in self.purchase.survey.questions.all().order_by("field_type"):
+            field_key = "question_%s" % question.pk
+
+            if question.field_type == Question.RATING_FIELD:
                 field = forms.ChoiceField(
                     label=question.prompt,
                     widget=forms.RadioSelect,
@@ -45,8 +48,8 @@ class SurveyTakeForm(UXFormMixin, forms.Form):
                         range(1, question.max_rating + 1),
                         range(1, question.max_rating + 1)))
                 )
-            # Question is a Textarea field
-            elif field_type == Question.TEXT_FIELD:
+                field.type = "choicefield"  # Required to apply the right CSS rules
+            elif question.field_type == Question.TEXT_FIELD:
                 field = forms.CharField(label=question.prompt, widget=forms.Textarea)
 
             # Use the HTML5 required attribute
@@ -54,3 +57,26 @@ class SurveyTakeForm(UXFormMixin, forms.Form):
                 field.widget.attrs["required"] = ""
 
             self.fields[field_key] = field
+
+    def save(self, *args, **kwargs):
+        """
+        Create a QuestionResponse for each Question.
+        """
+        self.instance.purchase = self.purchase
+        survey_response = super(SurveyResponseForm, self).save(*args, **kwargs)
+
+        if survey_response.pk is None:
+            return survey_response  # Bail if the SurveyResponse wasn't saved to the DB
+
+        responses = []
+        for question in self.purchase.survey.questions.all():
+            value = self.cleaned_data.get("question_%s" % question.pk)
+            responses.append(QuestionResponse(
+                response=survey_response,
+                question=question,
+                rating=value if question.field_type == Question.RATING_FIELD else None,
+                text_response=value if question.field_type == Question.TEXT_FIELD else ""
+            ))
+        QuestionResponse.objects.bulk_create(responses)
+
+        return survey_response

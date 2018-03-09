@@ -1,18 +1,17 @@
 from __future__ import absolute_import, unicode_literals
 
 from django.core.exceptions import ValidationError
-from django.core.urlresolvers import reverse
 from django.db import IntegrityError
 from django.db.models import F
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 from django.views import generic
 
 from mezzy.utils.views import LoginRequiredMixin, FormMessagesMixin
 
-from ..forms.surveys import SurveyPurchaseForm, SurveyTakeForm
-from ..models import Question, QuestionResponse, SurveyPage, SurveyPurchase, SurveyPurchaseCode
+from ..forms.surveys import SurveyPurchaseForm, SurveyResponseForm
+from ..models import SurveyPage, SurveyPurchase, SurveyPurchaseCode
 
 
 class SurveyPurchaseView(LoginRequiredMixin, FormMessagesMixin, generic.CreateView):
@@ -107,12 +106,13 @@ class SurveyManageView(LoginRequiredMixin, generic.TemplateView):
         return super(SurveyManageView, self).get_context_data(**kwargs)
 
 
-class SurveyTakeView(generic.FormView):
+class SurveyTakeView(FormMessagesMixin, generic.CreateView):
     """
     Allows a user to answer a survey and submit it.
     """
-    form_class = SurveyTakeForm
+    form_class = SurveyResponseForm
     template_name = "surveys/survey_take.html"
+    success_message = "Thank you! Your responses have been saved successfully"
 
     @cached_property
     def purchase(self):
@@ -120,36 +120,18 @@ class SurveyTakeView(generic.FormView):
             SurveyPurchase.objects.select_related("survey").prefetch_related("survey__questions"),
             public_id=self.kwargs["public_id"])
 
-    @cached_property
-    def survey(self):
-        return self.purchase.survey
-
     def get_form_kwargs(self):
         kwargs = super(SurveyTakeView, self).get_form_kwargs()
         kwargs.update({
-            "survey": self.survey
+            "purchase": self.purchase
         })
         return kwargs
 
     def get_context_data(self, **kwargs):
-        context = super(SurveyTakeView, self).get_context_data(**kwargs)
-        context.update({
-            "survey": self.survey,
+        kwargs.update({
+            "survey": self.purchase.survey,
         })
-        return context
+        return super(SurveyTakeView, self).get_context_data(**kwargs)
 
-    def form_valid(self, form):
-        # Create responses for every question
-        for question in self.survey.questions.all():
-            response = QuestionResponse(question=question)
-
-            field_type = question.field_type
-            field = form.cleaned_data.get("field_%s" % question.id)
-            if field_type == Question.RATING_FIELD:
-                response.rating = field
-            elif field_type == Question.TEXT_FIELD:
-                response.text_response = field
-
-            response.save()
-
-        return redirect(reverse("home"))
+    def get_success_url(self):
+        return "/"

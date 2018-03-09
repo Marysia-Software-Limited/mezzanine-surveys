@@ -2,10 +2,10 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
-from django.conf import settings
 import django.core.validators
-import uuid
+from django.conf import settings
 import mezzanine.core.fields
+import uuid
 
 
 class Migration(migrations.Migration):
@@ -37,7 +37,6 @@ class Migration(migrations.Migration):
                 ('_order', mezzanine.core.fields.OrderField(verbose_name='Order', null=True)),
                 ('field_type', models.IntegerField(verbose_name='Question type', choices=[(1, 'Rating'), (2, 'Text')])),
                 ('prompt', models.CharField(verbose_name='Prompt', max_length=300)),
-                ('invert_rating', models.BooleanField(verbose_name='Invert rating', default=False, help_text='If checked the rating given will be inverted')),
                 ('max_rating', models.PositiveSmallIntegerField(verbose_name='Maximum rating', default=5, help_text='Must be a number between 2 and 10', validators=[django.core.validators.MinValueValidator(2), django.core.validators.MaxValueValidator(10)])),
                 ('required', models.BooleanField(verbose_name='Required', default=True)),
             ],
@@ -51,6 +50,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', primary_key=True, serialize=False, auto_created=True)),
                 ('rating', models.PositiveSmallIntegerField(verbose_name='Rating', blank=True, null=True)),
                 ('text_response', models.TextField(verbose_name='Text response', blank=True)),
+                ('question', models.ForeignKey(related_name='responses', to='surveys.Question')),
             ],
         ),
         migrations.CreateModel(
@@ -93,11 +93,13 @@ class Migration(migrations.Migration):
                 ('created', models.DateTimeField(null=True, editable=False)),
                 ('updated', models.DateTimeField(null=True, editable=False)),
                 ('public_id', models.UUIDField(db_index=True, default=uuid.uuid4, editable=False)),
-                ('name', models.CharField(verbose_name='Name', max_length=200)),
-                ('email', models.EmailField(verbose_name='Email', max_length=300)),
                 ('transaction_id', models.CharField(verbose_name='Transaction ID', max_length=200, blank=True)),
-                ('charge_details', models.TextField(verbose_name='Charge details', blank=True)),
+                ('payment_method', models.CharField(verbose_name='Payment method', max_length=100, blank=True)),
+                ('amount', models.DecimalField(verbose_name='Amount', blank=True, null=True, max_digits=8, decimal_places=2)),
+                ('notes', models.TextField(verbose_name='Notes', blank=True)),
                 ('report_generated', models.DateTimeField(verbose_name='Report generated', blank=True, null=True)),
+                ('purchaser', models.ForeignKey(related_name='surveys', to=settings.AUTH_USER_MODEL)),
+                ('survey', models.ForeignKey(related_name='purchases', to='surveys.SurveyPage')),
             ],
             options={
                 'verbose_name': 'purchase',
@@ -117,30 +119,22 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'purchase codes',
             },
         ),
-        migrations.AddField(
-            model_name='surveypurchase',
-            name='purchased_with_code',
-            field=models.ForeignKey(blank=True, null=True, to='surveys.SurveyPurchaseCode'),
-        ),
-        migrations.AddField(
-            model_name='surveypurchase',
-            name='purchaser',
-            field=models.ForeignKey(related_name='surveys', to=settings.AUTH_USER_MODEL),
-        ),
-        migrations.AddField(
-            model_name='surveypurchase',
-            name='survey',
-            field=models.ForeignKey(related_name='purchases', to='surveys.SurveyPage'),
+        migrations.CreateModel(
+            name='SurveyResponse',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', primary_key=True, serialize=False, auto_created=True)),
+                ('created', models.DateTimeField(null=True, editable=False)),
+                ('updated', models.DateTimeField(null=True, editable=False)),
+                ('purchase', models.ForeignKey(related_name='responses', to='surveys.SurveyPurchase')),
+            ],
+            options={
+                'abstract': False,
+            },
         ),
         migrations.AddField(
             model_name='questionresponse',
-            name='purchase',
-            field=models.ForeignKey(related_name='responses', to='surveys.SurveyPurchase'),
-        ),
-        migrations.AddField(
-            model_name='questionresponse',
-            name='question',
-            field=models.ForeignKey(related_name='responses', to='surveys.Question'),
+            name='response',
+            field=models.ForeignKey(related_name='responses', to='surveys.SurveyResponse'),
         ),
         migrations.AddField(
             model_name='question',

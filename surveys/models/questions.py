@@ -9,7 +9,7 @@ from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
 
 from mezzanine.core.fields import RichTextField
-from mezzanine.core.models import Orderable
+from mezzanine.core.models import Orderable, TimeStamped
 
 from ..models import SurveyPage, SurveyPurchase
 
@@ -65,9 +65,6 @@ class Question(Orderable):
 
     field_type = models.IntegerField(_("Question type"), choices=QUESTION_TYPES)
     prompt = models.CharField(_("Prompt"), max_length=300)
-    invert_rating = models.BooleanField(
-        _("Invert rating"), default=False,
-        help_text=_("If checked the rating given will be inverted"))
     max_rating = models.PositiveSmallIntegerField(
         _("Maximum rating"), default=5,
         validators=[MinValueValidator(2), MaxValueValidator(10)],
@@ -82,20 +79,30 @@ class Question(Orderable):
             raise ValidationError(_("A Subcategory is required for rating questions"))
 
 
-class QuestionResponse(models.Model):
+@python_2_unicode_compatible
+class SurveyResponse(TimeStamped):
     """
-    Response to a Question related to a Purchase.
+    Collection of all responses related to a Purchase.
     """
     purchase = models.ForeignKey(
         SurveyPurchase, related_name="responses", on_delete=models.CASCADE)
+
+    def __str__(self):
+        return str(self.created)
+
+
+@python_2_unicode_compatible
+class QuestionResponse(models.Model):
+    """
+    Response to a single Question.
+    """
+    response = models.ForeignKey(
+        SurveyResponse, related_name="responses", on_delete=models.CASCADE)
     question = models.ForeignKey(Question, related_name="responses", on_delete=models.CASCADE)
     rating = models.PositiveSmallIntegerField(_("Rating"), blank=True, null=True)
     text_response = models.TextField(_("Text response"), blank=True)
 
-    def save(self, *args, **kwargs):
-        """
-        Invert the given rating if the question requires it.
-        """
-        if not self.pk and self.rating is not None and self.question.invert_rating:
-            self.rating = self.question.max_rating - int(self.rating) + 1
-        super(QuestionResponse, self).save(*args, **kwargs)
+    def __str__(self):
+        if self.rating is not None:
+            return str(self.rating)
+        return self.text_response

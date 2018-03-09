@@ -1,65 +1,16 @@
 {% extends "pages/page.html" %}
 {% load mezzanine_tags %}
 
-{% block extra_head %}
-	<script>
-		$(document).ready(function() {
-			var $form = $('#survey-form');
-			var $submitBtns = $form.find('[type="submit"]');
-
-			// Callback to be executed when the form is submitted
-			$submitBtns.on('click', function (event) {
-				if ($form[0].checkValidity()) {
-					// Disable button when submitting
-					$submitBtns.attr("disabled", true);
-
-					// Show success message
-					$('#survey-success').show();
-					return true;
-				}
-			});
-		});
-	</script>
-{% endblock extra_head %}
+{% block meta_title %}{{ survey }}{% endblock %}
 
 {% block main %}
-<form id="survey-form" action="" method="POST">
-	{% csrf_token %}
-	{% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+	{{ survey.instructions|richtext_filters|safe }}
 
-	{# Form #}
-		<div class="row rating-instructions">
-			<div class="col-sm-7">
-				Please rate each statement below.
-			</div>
-			<div class="col-sm-5">
-				<span class="pull-left">1=Strongly Disagree</span>
-				<span class="pull-right">{{ survey.get_max_rating }}=Strongly Agree</span>
-			</div>
+	<form id="survey-form" action="" method="POST">
+		{% errors_for form %}
+		{% fields_for form %}
+		<div class="form-actions">
+			<input class="btn btn-primary" type="submit" value="Submit">
 		</div>
-		{% for field in form.visible_fields %}
-			{{ field.errors }}
-			<div class="row rating">
-				<div class="col-sm-7">
-					{{ field.label_tag }}
-				</div>
-				<div class="col-sm-5">
-					{{ field }}
-				</div>
-			</div>
-		{% endfor %}
-
-		{# "Form sumitting" message (will be shown by JS) #}
-			<div id="survey-success" class="panel panel-primary" style="display:none">
-				<div class="panel-heading">Thanks!</div>
-				<div class="panel-body">
-					Your response is being submitted now. Please don't leave or refresh the page.
-				</div>
-			</div>
-
-		<button class="right btn btn-primary" type="submit">
-			Submit <i class="glyphicon glyphicon-upload" aria-hidden="true"></i>
-		</button>
-
-</form>
+	</form>
 {% endblock main %}
