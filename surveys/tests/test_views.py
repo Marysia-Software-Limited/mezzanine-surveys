@@ -27,14 +27,14 @@ class SurveyPageTestCase(ViewTestMixin, TestCase):
     def setUpTestData(cls):
         super(SurveyPageTestCase, cls).setUpTestData()
         cls.USER = get(User, is_active=True, is_staff=False)
-        cls.SURVEY = SurveyPage.objects.create(cost=10)
+        cls.SURVEY = SurveyPage.objects.create()
 
 
 @override_settings(ROOT_URLCONF=SURVEYS_URLCONF)
 class SurveyPurchaseCreateTestCase(SurveyPageTestCase):
 
     def test_access(self):
-        survey = SurveyPage.objects.create(cost=10)
+        survey = SurveyPage.objects.create()
 
         # Anon users cannot access surveys
         self.assertLoginRequired(SurveyPurchaseCreate, slug=survey.slug)
@@ -96,7 +96,7 @@ class SurveyPurchaseCreateTestCase(SurveyPageTestCase):
         self.assertEqual(purchase.purchaser, self.USER)
         self.assertEqual(purchase.survey, self.SURVEY)
         self.assertEqual(purchase.payment_method, "Demo")
-        self.assertEqual(purchase.amount, self.SURVEY.cost)
+        self.assertEqual(purchase.amount, 0)  # Survey cost was None
 
 
 class SurveyPurchaseDetailTestCase(SurveyPageTestCase):

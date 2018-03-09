@@ -100,7 +100,7 @@ class SurveyPurchaseCreate(LoginRequiredMixin, FormMessagesMixin, generic.Create
         """
         form.instance.transaction_id = "--"
         form.instance.payment_method = "Demo"
-        form.instance.amount = form.instance.survey.cost
+        form.instance.amount = form.instance.survey.cost or 0
 
 
 class SurveyPurchaseDetail(UserPassesTestMixin, SurveyPurchaseMixin, generic.TemplateView):

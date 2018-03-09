@@ -21,7 +21,7 @@ class SurveyPage(Page, RichText):
     Survey that contains a certain amount of questions.
     """
     instructions = RichTextField(_("Instructions"))
-    cost = models.DecimalField(_("Cost"), max_digits=7, decimal_places=2)
+    cost = models.DecimalField(_("Cost"), max_digits=7, decimal_places=2, blank=True, null=True)
     purchase_response = RichTextField(_("Purchase response"))
     completed_message = RichTextField(
         _("Completed message"),

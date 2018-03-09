@@ -2,17 +2,17 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
-import django.core.validators
 from django.conf import settings
-import mezzanine.core.fields
+import django.core.validators
 import uuid
+import mezzanine.core.fields
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ('pages', '0003_auto_20150527_1555'),
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
@@ -74,7 +74,7 @@ class Migration(migrations.Migration):
                 ('page_ptr', models.OneToOneField(primary_key=True, serialize=False, auto_created=True, parent_link=True, to='pages.Page')),
                 ('content', mezzanine.core.fields.RichTextField(verbose_name='Content')),
                 ('instructions', mezzanine.core.fields.RichTextField(verbose_name='Instructions')),
-                ('cost', models.DecimalField(verbose_name='Cost', max_digits=7, decimal_places=2)),
+                ('cost', models.DecimalField(verbose_name='Cost', blank=True, null=True, max_digits=7, decimal_places=2)),
                 ('purchase_response', mezzanine.core.fields.RichTextField(verbose_name='Purchase response')),
                 ('completed_message', mezzanine.core.fields.RichTextField(verbose_name='Completed message', help_text='Message shown to users after completing the survey')),
                 ('report_explanation', mezzanine.core.fields.RichTextField(verbose_name='Explanation', help_text="Helping content shown before the results' detail")),
