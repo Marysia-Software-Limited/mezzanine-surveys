@@ -135,4 +135,11 @@ class SurveyResponseCreate(FormMessagesMixin, SurveyPurchaseMixin, generic.Creat
         return kwargs
 
     def get_success_url(self):
-        return "/"
+        return self.purchase.get_complete_url()
+
+
+class SurveyResponseComplete(SurveyPurchaseMixin, generic.TemplateView):
+    """
+    Displays a confirmation message after the user has completed a survey.
+    """
+    template_name = "surveys/survey_response_complete.html"

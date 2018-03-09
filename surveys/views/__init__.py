@@ -1,3 +1,4 @@
 # flake8: noqa
 
-from .surveys import SurveyPurchaseCreate, SurveyPurchaseDetail, SurveyResponseCreate
+from .surveys import (
+    SurveyPurchaseCreate, SurveyPurchaseDetail, SurveyResponseCreate, SurveyResponseComplete)

@@ -95,6 +95,9 @@ class SurveyPurchase(TimeStamped):
     def get_response_create_url(self):
         return reverse("surveys:response_create", args=[self.public_id])
 
+    def get_complete_url(self):
+        return reverse("surveys:response_complete", args=[self.public_id])
+
     class Meta:
         verbose_name = _("purchase")
         verbose_name_plural = _("purchases")

@@ -12,5 +12,7 @@ urlpatterns = [
     url("^manage/(?P<public_id>%s)/$" % UUID_RE,
         views.SurveyPurchaseDetail.as_view(), name="purchase_detail"),
     url("^take/(?P<public_id>%s)/$" % UUID_RE,
-        views.SurveyResponseCreate.as_view(), name="response_create")
+        views.SurveyResponseCreate.as_view(), name="response_create"),
+    url("^take/(?P<public_id>%s)/complete/$" % UUID_RE,
+        views.SurveyResponseComplete.as_view(), name="response_complete"),
 ]

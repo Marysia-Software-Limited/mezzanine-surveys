@@ -14,7 +14,8 @@ from mezzy.utils.tests import ViewTestMixin
 from surveys.models import (
     SurveyPage, SurveyPurchase, SurveyPurchaseCode, SurveyResponse, Question, QuestionResponse)
 from surveys.tests import urls_with_surveys
-from surveys.views import SurveyPurchaseCreate, SurveyPurchaseDetail, SurveyResponseCreate
+from surveys.views import (
+    SurveyPurchaseCreate, SurveyPurchaseDetail, SurveyResponseCreate, SurveyResponseComplete)
 
 
 class SurveyPageTestCase(ViewTestMixin, TestCase):
@@ -159,6 +160,7 @@ class SurveyResponseCreateTestCase(SurveyPageTestCase):
         fields = response.context_data["form"].fields
         self.assertEqual(len(fields), 5)
 
+    @override_settings(ROOT_URLCONF=urls_with_surveys())
     def test_survey_response(self):
         """
         Responses to questions in a survey are stored correctly.
@@ -197,7 +199,7 @@ class SurveyResponseCreateTestCase(SurveyPageTestCase):
 
         # Rating question should pass validation if value is correct
         data[rating_field_key] = 3
-        self.post(SurveyResponseCreate, public_id=self.PURCHASE_ID, data=data)
+        response = self.post(SurveyResponseCreate, public_id=self.PURCHASE_ID, data=data)
         survey_response = SurveyResponse.objects.get()
 
         # Verify the rating response was stored correctly
@@ -211,3 +213,10 @@ class SurveyResponseCreateTestCase(SurveyPageTestCase):
         self.assertIsNone(text_response.rating)
         self.assertEqual(text_response.text_response, "TEST")
         self.assertEqual(text_response.response, survey_response)
+
+        # Verify we've been redirected to the confirmation message
+        self.assertEqual(response["location"], self.PURCHASE.get_complete_url())
+
+    def test_survey_response_complete(self):
+        response = self.assert200(SurveyResponseComplete, public_id=self.PURCHASE.public_id)
+        self.assertEqual(response.context_data["survey"], self.SURVEY)
