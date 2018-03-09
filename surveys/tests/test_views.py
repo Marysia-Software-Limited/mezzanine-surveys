@@ -3,7 +3,7 @@ from __future__ import absolute_import, unicode_literals
 from builtins import range
 
 from django.contrib.auth.models import User
-from django.test import TestCase, override_settings
+from django.test import TestCase
 
 from django_dynamic_fixture import get
 
@@ -13,7 +13,6 @@ from mezzy.utils.tests import ViewTestMixin
 
 from surveys.models import (
     SurveyPage, SurveyPurchase, SurveyPurchaseCode, SurveyResponse, Question, QuestionResponse)
-from surveys.tests import SURVEYS_URLCONF
 from surveys.views import (
     SurveyPurchaseCreate, SurveyPurchaseDetail, SurveyResponseCreate, SurveyResponseComplete)
 
@@ -30,7 +29,6 @@ class SurveyPageTestCase(ViewTestMixin, TestCase):
         cls.SURVEY = SurveyPage.objects.create()
 
 
-@override_settings(ROOT_URLCONF=SURVEYS_URLCONF)
 class SurveyPurchaseCreateTestCase(SurveyPageTestCase):
 
     def test_access(self):
@@ -160,7 +158,6 @@ class SurveyResponseCreateTestCase(SurveyPageTestCase):
         fields = response.context_data["form"].fields
         self.assertEqual(len(fields), 5)
 
-    @override_settings(ROOT_URLCONF=SURVEYS_URLCONF)
     def test_survey_response(self):
         """
         Responses to questions in a survey are stored correctly.

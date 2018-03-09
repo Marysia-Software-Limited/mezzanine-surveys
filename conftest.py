@@ -40,6 +40,7 @@ from . import settings
 globals().update(i for i in settings.__dict__.items() if i[0].isupper())
 if "surveys" not in settings.INSTALLED_APPS:
     INSTALLED_APPS = list(settings.INSTALLED_APPS) + ["surveys"]
+    ROOT_URLCONF = "surveys.tests.urls"
 # Use the MD5 password hasher by default for quicker test runs.
 PASSWORD_HASHERS = ('django.contrib.auth.hashers.MD5PasswordHasher',)
 """
