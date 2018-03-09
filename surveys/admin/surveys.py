@@ -10,23 +10,26 @@ from django.utils.translation import ugettext_lazy as _
 
 from mezzanine.core.admin import TabularDynamicInlineAdmin
 from mezzanine.pages.admin import PageAdmin
+from mezzanine.utils.admin import admin_url
 
 from ..models import SurveyPage, Question, SurveyPurchase, SurveyPurchaseCode
 
 
-survey_fieldsets = [
+surveypage_fieldsets = [
     (None, {
-        "fields": [
-            "title", "status", "content", "instructions", "cost", "purchase_response",
-            "completed_message",
-        ]
+        "fields": ["title", "status", ("publish_date", "expiry_date"), "content"],
+    }),
+    (_("Purchasing"), {
+        "classes": ["collapse-closed"],
+        "fields": ["get_purchases_link", "cost", "purchase_response"],
+    }),
+    (_("Instructions"), {
+        "classes": ["collapse-closed"],
+        "fields": ["instructions", "completed_message"],
     }),
     (_("Report"), {
-        "fields": ["report_explanation"]
-    }),
-    (_("Advanced Options"), {
-        "classes": ("collapse-closed",),
-        "fields": [("publish_date", "expiry_date")]
+        "classes": ["collapse-closed"],
+        "fields": ["report_explanation"],
     }),
     deepcopy(PageAdmin.fieldsets[-1]),  # Meta panel
 ]
@@ -43,8 +46,20 @@ class QuestionInline(TabularDynamicInlineAdmin):
 
 @admin.register(SurveyPage)
 class SurveyPageAdmin(PageAdmin):
-    fieldsets = survey_fieldsets
+    fieldsets = surveypage_fieldsets
+    readonly_fields = ["get_purchases_link"]
     inlines = [SurveyPurchaseCodeInline, QuestionInline]
+
+    def get_purchases_link(self, obj):
+        if obj.pk is None:
+            return ""
+        return format_html(
+            "<a href='{}?survey__page_ptr__exact={}'>Manage {} purchase(s)</a>",
+            admin_url(SurveyPurchase, "changelist"),
+            obj.pk,
+            obj.purchases.count()
+        )
+    get_purchases_link.short_description = _("Purchases")
 
 
 @admin.register(SurveyPurchase)
