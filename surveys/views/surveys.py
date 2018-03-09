@@ -8,18 +8,36 @@ from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 from django.views import generic
 
-from mezzy.utils.views import LoginRequiredMixin, FormMessagesMixin
+from mezzy.utils.views import FormMessagesMixin, LoginRequiredMixin, UserPassesTestMixin
 
 from ..forms.surveys import SurveyPurchaseForm, SurveyResponseForm
 from ..models import SurveyPage, SurveyPurchase, SurveyPurchaseCode
 
 
-class SurveyPurchaseView(LoginRequiredMixin, FormMessagesMixin, generic.CreateView):
+class SurveyPurchaseMixin(object):
     """
-    Handles payment process for buying a survey.
+    Generic view to get SurveyPurchase intstances by PK.
+    """
+    @cached_property
+    def purchase(self):
+        return get_object_or_404(
+            SurveyPurchase.objects.select_related("survey").prefetch_related("survey__questions"),
+            public_id=self.kwargs["public_id"])
+
+    def get_context_data(self, **kwargs):
+        kwargs.update({
+            "purchase": self.purchase,
+            "survey": self.purchase.survey,
+        })
+        return super(SurveyPurchaseMixin, self).get_context_data(**kwargs)
+
+
+class SurveyPurchaseCreate(LoginRequiredMixin, FormMessagesMixin, generic.CreateView):
+    """
+    Allows users to purchase surveys.
     """
     form_class = SurveyPurchaseForm
-    template_name = "surveys/survey_purchase.html"
+    template_name = "surveys/survey_purchase_create.html"
     success_message = _("You have successfully purchased this survey")
     error_message = _("There was a problem with the payment process. Please try again.")
 
@@ -33,7 +51,7 @@ class SurveyPurchaseView(LoginRequiredMixin, FormMessagesMixin, generic.CreateVi
         kwargs.update({
             "survey": self.survey,
         })
-        return super(SurveyPurchaseView, self).get_context_data(**kwargs)
+        return super(SurveyPurchaseCreate, self).get_context_data(**kwargs)
 
     def form_valid(self, form):
         """
@@ -54,7 +72,7 @@ class SurveyPurchaseView(LoginRequiredMixin, FormMessagesMixin, generic.CreateVi
             return self.form_invalid(form)
 
         # Code or payment processed successfully, save and continue
-        return super(SurveyPurchaseView, self).form_valid(form)
+        return super(SurveyPurchaseCreate, self).form_valid(form)
 
     def process_purchase_code(self, purchase_code, form):
         """
@@ -85,52 +103,36 @@ class SurveyPurchaseView(LoginRequiredMixin, FormMessagesMixin, generic.CreateVi
         form.instance.amount = form.instance.survey.cost
 
 
-class SurveyManageView(LoginRequiredMixin, generic.TemplateView):
+class SurveyPurchaseDetail(UserPassesTestMixin, SurveyPurchaseMixin, generic.TemplateView):
     """
-    Overview of survey that provides a report generation functionality.
+    Dashboard for a survey accessible after a user has purchased access to it.
     """
-    template_name = "surveys/survey_manage.html"
+    template_name = "surveys/survey_purchase_detail.html"
 
-    @cached_property
-    def purchase(self):
-        return get_object_or_404(
-            SurveyPurchase.objects.select_related("survey"),
-            public_id=self.kwargs["public_id"], purchaser=self.request.user)
-
-    def get_context_data(self, **kwargs):
-        kwargs.update({
-            "purchase": self.purchase,
-            "survey": self.purchase.survey,
-        })
-        return super(SurveyManageView, self).get_context_data(**kwargs)
+    def test_func(self):
+        """
+        Only allow access to the user that purchased this survey.
+        """
+        user = self.request.user
+        if not user.is_authenticated():
+            return False
+        return self.purchase.purchaser == user
 
 
-class SurveyTakeView(FormMessagesMixin, generic.CreateView):
+class SurveyResponseCreate(FormMessagesMixin, SurveyPurchaseMixin, generic.CreateView):
     """
     Allows a user to answer a survey and submit it.
     """
     form_class = SurveyResponseForm
-    template_name = "surveys/survey_take.html"
+    template_name = "surveys/survey_response_create.html"
     success_message = "Thank you! Your responses have been saved successfully"
 
-    @cached_property
-    def purchase(self):
-        return get_object_or_404(
-            SurveyPurchase.objects.select_related("survey").prefetch_related("survey__questions"),
-            public_id=self.kwargs["public_id"])
-
     def get_form_kwargs(self):
-        kwargs = super(SurveyTakeView, self).get_form_kwargs()
+        kwargs = super(SurveyResponseCreate, self).get_form_kwargs()
         kwargs.update({
             "purchase": self.purchase
         })
         return kwargs
-
-    def get_context_data(self, **kwargs):
-        kwargs.update({
-            "survey": self.purchase.survey,
-        })
-        return super(SurveyTakeView, self).get_context_data(**kwargs)
 
     def get_success_url(self):
         return "/"

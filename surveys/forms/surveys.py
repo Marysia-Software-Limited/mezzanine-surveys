@@ -12,7 +12,7 @@ from ..models import SurveyPurchase, SurveyResponse, Question, QuestionResponse
 
 class SurveyPurchaseForm(UXFormMixin, forms.ModelForm):
     """
-    Base class inherited by a payment gateway form.
+    Allows users to purchase surveys (via purchase code or traditional payment).
     """
     purchase_code = forms.CharField(label=_("Purchase Code"), required=False)
 
@@ -21,9 +21,9 @@ class SurveyPurchaseForm(UXFormMixin, forms.ModelForm):
         fields = []  # No model fields are user-editable
 
 
-class SurveyResponseForm(UXFormMixin, forms.ModelForm):
+class SurveyResponseForm(forms.ModelForm):
     """
-    Form that an user uses to answer a Survey
+    Allows users to answer survey questions.
     """
 
     class Meta:
@@ -68,15 +68,15 @@ class SurveyResponseForm(UXFormMixin, forms.ModelForm):
         if survey_response.pk is None:
             return survey_response  # Bail if the SurveyResponse wasn't saved to the DB
 
-        responses = []
+        question_responses = []
         for question in self.purchase.survey.questions.all():
             value = self.cleaned_data.get("question_%s" % question.pk)
-            responses.append(QuestionResponse(
+            question_responses.append(QuestionResponse(
                 response=survey_response,
                 question=question,
                 rating=value if question.field_type == Question.RATING_FIELD else None,
                 text_response=value if question.field_type == Question.TEXT_FIELD else ""
             ))
-        QuestionResponse.objects.bulk_create(responses)
+        QuestionResponse.objects.bulk_create(question_responses)
 
         return survey_response

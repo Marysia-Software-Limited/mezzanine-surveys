@@ -74,5 +74,5 @@ class SurveyPurchaseAdmin(admin.ModelAdmin):
     def get_public_link(self, obj):
         return format_html(
             "<a href='{}' target='_blank'>Open public page</a>",
-            obj.get_public_url())
+            obj.get_response_create_url())
     get_public_link.short_description = _("Public link")

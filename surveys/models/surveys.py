@@ -90,10 +90,10 @@ class SurveyPurchase(TimeStamped):
     report_generated = models.DateTimeField(_("Report generated"), blank=True, null=True)
 
     def get_absolute_url(self):
-        return reverse("surveys:manage", args=[self.public_id])
+        return reverse("surveys:purchase_detail", args=[self.public_id])
 
-    def get_public_url(self):
-        return reverse("surveys:take", args=[self.public_id])
+    def get_response_create_url(self):
+        return reverse("surveys:response_create", args=[self.public_id])
 
     class Meta:
         verbose_name = _("purchase")

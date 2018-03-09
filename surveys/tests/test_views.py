@@ -14,36 +14,39 @@ from mezzy.utils.tests import ViewTestMixin
 from surveys.models import (
     SurveyPage, SurveyPurchase, SurveyPurchaseCode, SurveyResponse, Question, QuestionResponse)
 from surveys.tests import urls_with_surveys
-from surveys.views import SurveyPurchaseView, SurveyManageView, SurveyTakeView
+from surveys.views import SurveyPurchaseCreate, SurveyPurchaseDetail, SurveyResponseCreate
 
 
-class BaseSurveyPageTest(ViewTestMixin, TestCase):
+class SurveyPageTestCase(ViewTestMixin, TestCase):
+    """
+    Create a SurveyPage and user as fixtures.
+    """
 
     @classmethod
     def setUpTestData(cls):
-        super(BaseSurveyPageTest, cls).setUpTestData()
+        super(SurveyPageTestCase, cls).setUpTestData()
         cls.USER = get(User, is_active=True, is_staff=False)
         cls.SURVEY = SurveyPage.objects.create(cost=10)
 
 
 @override_settings(ROOT_URLCONF=urls_with_surveys())
-class SurveyPurchaseTestCase(BaseSurveyPageTest):
+class SurveyPurchaseCreateTestCase(SurveyPageTestCase):
 
     def test_access(self):
         survey = SurveyPage.objects.create(cost=10)
 
         # Anon users cannot access surveys
-        self.assertLoginRequired(SurveyPurchaseView, slug=survey.slug)
+        self.assertLoginRequired(SurveyPurchaseCreate, slug=survey.slug)
 
         # Non-published pages cannot be accessed
         survey.status = CONTENT_STATUS_DRAFT
         survey.save()
-        self.assert404(SurveyPurchaseView, slug=survey.slug, user=self.USER)
+        self.assert404(SurveyPurchaseCreate, slug=survey.slug, user=self.USER)
 
         # Logged in users can access surveys
         survey.status = CONTENT_STATUS_PUBLISHED
         survey.save()
-        self.assert200(SurveyPurchaseView, slug=survey.slug, user=self.USER)
+        self.assert200(SurveyPurchaseCreate, slug=survey.slug, user=self.USER)
 
     def test_purchase_code(self):
         """
@@ -55,19 +58,20 @@ class SurveyPurchaseTestCase(BaseSurveyPageTest):
 
         # Test invalid purchase code is rejected
         data["purchase_code"] = "invalid"
-        self.post(SurveyPurchaseView, slug=self.SURVEY.slug, user=self.USER, data=data)
+        self.post(SurveyPurchaseCreate, slug=self.SURVEY.slug, user=self.USER, data=data)
         self.assertEqual(SurveyPurchase.objects.count(), 0)
 
         # Test depleted purchase code is rejected
         data["purchase_code"] = depleted_code.code
-        self.post(SurveyPurchaseView, slug=self.SURVEY.slug, user=self.USER, data=data)
+        self.post(SurveyPurchaseCreate, slug=self.SURVEY.slug, user=self.USER, data=data)
         self.assertEqual(SurveyPurchase.objects.count(), 0)
         depleted_code.refresh_from_db()
         self.assertEqual(depleted_code.uses_remaining, 0)
 
         # Test valid code is accepted and purchase is created
         data["purchase_code"] = valid_code.code
-        response = self.post(SurveyPurchaseView, slug=self.SURVEY.slug, user=self.USER, data=data)
+        response = self.post(
+            SurveyPurchaseCreate, slug=self.SURVEY.slug, user=self.USER, data=data)
         purchase = SurveyPurchase.objects.get()
         self.assertEqual(response["location"], purchase.get_absolute_url())
         self.assertEqual(purchase.purchaser, self.USER)
@@ -85,7 +89,7 @@ class SurveyPurchaseTestCase(BaseSurveyPageTest):
         Purchases completed via the default payment method (doesn't do anything).
         """
         # Test the new purchase was created successfully
-        response = self.post(SurveyPurchaseView, slug=self.SURVEY.slug, user=self.USER)
+        response = self.post(SurveyPurchaseCreate, slug=self.SURVEY.slug, user=self.USER)
         purchase = SurveyPurchase.objects.get()
         self.assertEqual(response["location"], purchase.get_absolute_url())
         self.assertEqual(purchase.purchaser, self.USER)
@@ -94,11 +98,11 @@ class SurveyPurchaseTestCase(BaseSurveyPageTest):
         self.assertEqual(purchase.amount, self.SURVEY.cost)
 
 
-class SurveyManageTestCase(BaseSurveyPageTest):
+class SurveyPurchaseDetailTestCase(SurveyPageTestCase):
 
     @classmethod
     def setUpTestData(cls):
-        super(SurveyManageTestCase, cls).setUpTestData()
+        super(SurveyPurchaseDetailTestCase, cls).setUpTestData()
         cls.PURCHASE = get(
             SurveyPurchase, survey=cls.SURVEY, purchaser=cls.USER, purchased_with_code=None,
             report_generated=None)
@@ -106,22 +110,23 @@ class SurveyManageTestCase(BaseSurveyPageTest):
 
     def test_access(self):
         # Anon users cannot access the purchase
-        self.assertLoginRequired(SurveyManageView, public_id=self.PURCHASE_ID)
+        self.assertLoginRequired(SurveyPurchaseDetail, public_id=self.PURCHASE_ID)
 
         # Non-owner users cannot access the purchase
         random_user = get(User, is_active=True)
-        self.assert404(SurveyManageView, public_id=self.PURCHASE_ID, user=random_user)
+        self.assertLoginRequired(
+            SurveyPurchaseDetail, public_id=self.PURCHASE_ID, user=random_user)
 
         # Owner can access the purchase
-        response = self.assert200(SurveyManageView, public_id=self.PURCHASE_ID, user=self.USER)
+        response = self.assert200(SurveyPurchaseDetail, public_id=self.PURCHASE_ID, user=self.USER)
         self.assertEqual(response.context_data["purchase"], self.PURCHASE)
 
 
-class SurveyTakeTestCase(BaseSurveyPageTest):
+class SurveyResponseCreateTestCase(SurveyPageTestCase):
 
     @classmethod
     def setUpTestData(cls):
-        super(SurveyTakeTestCase, cls).setUpTestData()
+        super(SurveyResponseCreateTestCase, cls).setUpTestData()
         cls.PURCHASE = get(
             SurveyPurchase, survey=cls.SURVEY, purchaser=cls.USER, purchased_with_code=None,
             report_generated=None)
@@ -145,10 +150,10 @@ class SurveyTakeTestCase(BaseSurveyPageTest):
             get(Question, survey=self.SURVEY)
 
         # Anon users can access the survey
-        self.assert200(SurveyTakeView, public_id=self.PURCHASE_ID)
+        self.assert200(SurveyResponseCreate, public_id=self.PURCHASE_ID)
 
         # Logged-in users can access the survey
-        response = self.assert200(SurveyTakeView, public_id=self.PURCHASE_ID, user=self.USER)
+        response = self.assert200(SurveyResponseCreate, public_id=self.PURCHASE_ID, user=self.USER)
 
         # A form is present in the context with our 5 questions
         fields = response.context_data["form"].fields
@@ -168,31 +173,31 @@ class SurveyTakeTestCase(BaseSurveyPageTest):
 
         # Required rating question should fail validation if not provided
         data[rating_field_key] = ""
-        response = self.post(SurveyTakeView, public_id=self.PURCHASE_ID, data=data)
+        response = self.post(SurveyResponseCreate, public_id=self.PURCHASE_ID, data=data)
         self.assertFieldError(response, rating_field_key)
         self.assertEqual(SurveyResponse.objects.count(), 0)
 
         # Rating question should fail validation if value is above max_rating
         data[rating_field_key] = 10
-        response = self.post(SurveyTakeView, public_id=self.PURCHASE_ID, data=data)
+        response = self.post(SurveyResponseCreate, public_id=self.PURCHASE_ID, data=data)
         self.assertFieldError(response, rating_field_key)
         self.assertEqual(SurveyResponse.objects.count(), 0)
 
         # Rating question should fail validation if value is below 1
         data[rating_field_key] = 0
-        response = self.post(SurveyTakeView, public_id=self.PURCHASE_ID, data=data)
+        response = self.post(SurveyResponseCreate, public_id=self.PURCHASE_ID, data=data)
         self.assertFieldError(response, rating_field_key)
         self.assertEqual(SurveyResponse.objects.count(), 0)
 
         # Rating question should fail validation if value is not numeric
         data[rating_field_key] = "abcd"
-        response = self.post(SurveyTakeView, public_id=self.PURCHASE_ID, data=data)
+        response = self.post(SurveyResponseCreate, public_id=self.PURCHASE_ID, data=data)
         self.assertFieldError(response, rating_field_key)
         self.assertEqual(SurveyResponse.objects.count(), 0)
 
         # Rating question should pass validation if value is correct
         data[rating_field_key] = 3
-        self.post(SurveyTakeView, public_id=self.PURCHASE_ID, data=data)
+        self.post(SurveyResponseCreate, public_id=self.PURCHASE_ID, data=data)
         survey_response = SurveyResponse.objects.get()
 
         # Verify the rating response was stored correctly

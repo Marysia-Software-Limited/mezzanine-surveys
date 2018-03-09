@@ -53,7 +53,7 @@
 	{# Survey sharing link #}
 		<label for="survey-url">Public URL</label>
 		<div class="input-group">
-			<input id="survey-url" type="text" class="form-control" value="{{ request.scheme }}://{{ request.get_host }}{{ purchase.get_public_url }}">
+			<input id="survey-url" type="text" class="form-control" value="{{ request.scheme }}://{{ request.get_host }}{{ purchase.get_response_create_url }}">
 			<span class="input-group-btn">
 				<button class="btn btn-warning js-tooltip js-copy" type="button" title="Copy to clipboard"
 				data-toggle="tooltip">Copy</button>
