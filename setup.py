@@ -28,6 +28,6 @@ setup(
     ],
     install_requires=[
         'django-wkhtmltopdf==3.1.0',
-        'mezzy==2.1.1',
+        'mezzy==2.2.0',
     ]
 )
