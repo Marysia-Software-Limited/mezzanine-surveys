@@ -95,12 +95,12 @@ class SurveyPurchaseCreate(LoginRequiredMixin, FormMessagesMixin, generic.Create
 
     def process_payment(self, form):
         """
-        Process the payment.
-        Sets the charge details and transaction ID for the SurveyPurchase.
+        By default all purchases are complimentary.
+        Payment processors should implement their logic here and set these fields accordingly.
         """
-        form.instance.transaction_id = "--"
-        form.instance.payment_method = "Demo"
-        form.instance.amount = form.instance.survey.cost or 0
+        form.instance.transaction_id = "Complimentary"
+        form.instance.payment_method = "Complimentary"
+        form.instance.amount = 0
 
 
 class SurveyPurchaseDetail(UserPassesTestMixin, SurveyPurchaseMixin, generic.TemplateView):

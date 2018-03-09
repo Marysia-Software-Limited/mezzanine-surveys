@@ -93,7 +93,8 @@ class SurveyPurchaseCreateTestCase(SurveyPageTestCase):
         self.assertEqual(response["location"], purchase.get_absolute_url())
         self.assertEqual(purchase.purchaser, self.USER)
         self.assertEqual(purchase.survey, self.SURVEY)
-        self.assertEqual(purchase.payment_method, "Demo")
+        self.assertEqual(purchase.payment_method, "Complimentary")
+        self.assertEqual(purchase.transaction_id, "Complimentary")
         self.assertEqual(purchase.amount, 0)  # Survey cost was None
 
 
