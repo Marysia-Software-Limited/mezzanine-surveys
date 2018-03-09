@@ -98,10 +98,9 @@ class SurveyManageView(LoginRequiredMixin, generic.TemplateView):
             public_id=self.kwargs["public_id"], purchaser=self.request.user)
 
     def get_context_data(self, **kwargs):
-        survey = self.purchase.survey
         kwargs.update({
             "purchase": self.purchase,
-            "survey": survey,
+            "survey": self.purchase.survey,
         })
         return super(SurveyManageView, self).get_context_data(**kwargs)
 
