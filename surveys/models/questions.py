@@ -15,7 +15,7 @@ from ..models import SurveyPage, SurveyPurchase
 
 
 @python_2_unicode_compatible
-class Category(Orderable):
+class Category(models.Model):
     """
     A Category that contains one or more Subcategories
     """
@@ -23,6 +23,7 @@ class Category(Orderable):
     description = RichTextField(_("Description"))
 
     class Meta:
+        ordering = ["name"]
         verbose_name = _("category")
         verbose_name_plural = _("categories")
 
@@ -31,7 +32,7 @@ class Category(Orderable):
 
 
 @python_2_unicode_compatible
-class Subcategory(Orderable):
+class Subcategory(models.Model):
     """
     A Subcategory that a Question belongs to
     """
@@ -40,7 +41,7 @@ class Subcategory(Orderable):
     description = RichTextField(_("Description"))
 
     class Meta:
-        ordering = ["category", "_order"]
+        ordering = ["category", "name"]
         verbose_name = _("subcategory")
         verbose_name_plural = _("subcategories")
 

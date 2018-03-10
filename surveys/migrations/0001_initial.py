@@ -3,16 +3,16 @@ from __future__ import unicode_literals
 
 from django.db import migrations, models
 import django.core.validators
-from django.conf import settings
 import uuid
+from django.conf import settings
 import mezzanine.core.fields
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pages', '0003_auto_20150527_1555'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        ('pages', '0003_auto_20150527_1555'),
     ]
 
     operations = [
@@ -20,14 +20,13 @@ class Migration(migrations.Migration):
             name='Category',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', primary_key=True, serialize=False, auto_created=True)),
-                ('_order', mezzanine.core.fields.OrderField(verbose_name='Order', null=True)),
                 ('name', models.CharField(verbose_name='Name', max_length=200)),
                 ('description', mezzanine.core.fields.RichTextField(verbose_name='Description')),
             ],
             options={
                 'verbose_name': 'category',
                 'verbose_name_plural': 'categories',
-                'ordering': ('_order',),
+                'ordering': ['name'],
             },
         ),
         migrations.CreateModel(
@@ -57,7 +56,6 @@ class Migration(migrations.Migration):
             name='Subcategory',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', primary_key=True, serialize=False, auto_created=True)),
-                ('_order', mezzanine.core.fields.OrderField(verbose_name='Order', null=True)),
                 ('name', models.CharField(verbose_name='Name', max_length=200)),
                 ('description', mezzanine.core.fields.RichTextField(verbose_name='Description')),
                 ('category', models.ForeignKey(related_name='subcategories', to='surveys.Category')),
@@ -65,7 +63,7 @@ class Migration(migrations.Migration):
             options={
                 'verbose_name': 'subcategory',
                 'verbose_name_plural': 'subcategories',
-                'ordering': ['category', '_order'],
+                'ordering': ['category', 'name'],
             },
         ),
         migrations.CreateModel(
