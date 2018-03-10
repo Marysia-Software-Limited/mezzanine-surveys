@@ -17,7 +17,9 @@ from ..models import SurveyPage, Question, SurveyPurchase, SurveyPurchaseCode
 
 surveypage_fieldsets = [
     (None, {
-        "fields": ["title", "status", ("publish_date", "expiry_date"), "content"],
+        "fields": [
+            "title", "status", ("publish_date", "expiry_date"), "content", "in_menus",
+            "login_required"],
     }),
     (_("Purchasing"), {
         "classes": ["collapse-closed"],
