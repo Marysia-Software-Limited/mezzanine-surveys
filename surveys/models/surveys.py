@@ -21,7 +21,7 @@ class SurveyPage(Page, RichText):
     Survey that contains a certain amount of questions.
     """
     instructions = RichTextField(_("Instructions"))
-    cost = models.DecimalField(_("Cost"), max_digits=7, decimal_places=2, blank=True, null=True)
+    cost = models.DecimalField(_("Cost"), max_digits=7, decimal_places=2, default=0)
     purchase_response = RichTextField(_("Purchase response"))
     completed_message = RichTextField(
         _("Completed message"),
@@ -38,6 +38,9 @@ class SurveyPage(Page, RichText):
         allowed value for all instances of this survey.
         """
         return self.questions.aggregate(Max("max_rating"))["max_rating__max"]
+
+    def get_requires_payment(self):
+        return self.cost > 0
 
     class Meta:
         verbose_name = _("survey page")

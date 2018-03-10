@@ -26,26 +26,27 @@ class SurveyPageTestCase(ViewTestMixin, TestCase):
     def setUpTestData(cls):
         super(SurveyPageTestCase, cls).setUpTestData()
         cls.USER = get(User, is_active=True, is_staff=False)
-        cls.SURVEY = SurveyPage.objects.create()
+        cls.SURVEY = SurveyPage.objects.create(cost=10)
 
 
 class SurveyPurchaseCreateTestCase(SurveyPageTestCase):
+    view = SurveyPurchaseCreate
 
     def test_access(self):
         survey = SurveyPage.objects.create()
 
         # Anon users cannot access surveys
-        self.assertLoginRequired(SurveyPurchaseCreate, slug=survey.slug)
+        self.assertLoginRequired(self.view, slug=survey.slug)
 
         # Non-published pages cannot be accessed
         survey.status = CONTENT_STATUS_DRAFT
         survey.save()
-        self.assert404(SurveyPurchaseCreate, slug=survey.slug, user=self.USER)
+        self.assert404(self.view, slug=survey.slug, user=self.USER)
 
         # Logged in users can access surveys
         survey.status = CONTENT_STATUS_PUBLISHED
         survey.save()
-        self.assert200(SurveyPurchaseCreate, slug=survey.slug, user=self.USER)
+        self.assert200(self.view, slug=survey.slug, user=self.USER)
 
     def test_purchase_code(self):
         """
@@ -57,20 +58,19 @@ class SurveyPurchaseCreateTestCase(SurveyPageTestCase):
 
         # Test invalid purchase code is rejected
         data["purchase_code"] = "invalid"
-        self.post(SurveyPurchaseCreate, slug=self.SURVEY.slug, user=self.USER, data=data)
+        self.post(self.view, slug=self.SURVEY.slug, user=self.USER, data=data)
         self.assertEqual(SurveyPurchase.objects.count(), 0)
 
         # Test depleted purchase code is rejected
         data["purchase_code"] = depleted_code.code
-        self.post(SurveyPurchaseCreate, slug=self.SURVEY.slug, user=self.USER, data=data)
+        self.post(self.view, slug=self.SURVEY.slug, user=self.USER, data=data)
         self.assertEqual(SurveyPurchase.objects.count(), 0)
         depleted_code.refresh_from_db()
         self.assertEqual(depleted_code.uses_remaining, 0)
 
         # Test valid code is accepted and purchase is created
         data["purchase_code"] = valid_code.code
-        response = self.post(
-            SurveyPurchaseCreate, slug=self.SURVEY.slug, user=self.USER, data=data)
+        response = self.post(self.view, slug=self.SURVEY.slug, user=self.USER, data=data)
         purchase = SurveyPurchase.objects.get()
         self.assertEqual(response["location"], purchase.get_absolute_url())
         self.assertEqual(purchase.purchaser, self.USER)
@@ -88,7 +88,7 @@ class SurveyPurchaseCreateTestCase(SurveyPageTestCase):
         Purchases completed via the default payment method (doesn't do anything).
         """
         # Test the new purchase was created successfully
-        response = self.post(SurveyPurchaseCreate, slug=self.SURVEY.slug, user=self.USER)
+        response = self.post(self.view, slug=self.SURVEY.slug, user=self.USER)
         purchase = SurveyPurchase.objects.get()
         self.assertEqual(response["location"], purchase.get_absolute_url())
         self.assertEqual(purchase.purchaser, self.USER)

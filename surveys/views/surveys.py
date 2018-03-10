@@ -39,7 +39,7 @@ class SurveyPurchaseCreate(LoginRequiredMixin, FormMessagesMixin, generic.Create
     form_class = SurveyPurchaseForm
     template_name = "surveys/survey_purchase_create.html"
     success_message = _("You have successfully purchased this survey")
-    error_message = _("There was a problem with the payment process. Please try again.")
+    error_message = _("There was a problem with the purchase process")
 
     @cached_property
     def survey(self):
