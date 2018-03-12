@@ -16,7 +16,7 @@ from ..models import SurveyPage, SurveyPurchase, SurveyPurchaseCode
 
 class SurveyPurchaseMixin(object):
     """
-    Generic view to get SurveyPurchase intstances by PK.
+    Generic view to get SurveyPurchase intstances by public ID.
     """
     @cached_property
     def purchase(self):
