@@ -26,7 +26,7 @@ class SurveyPageTestCase(ViewTestMixin, TestCase):
     def setUpTestData(cls):
         super(SurveyPageTestCase, cls).setUpTestData()
         cls.USER = get(User, is_active=True, is_staff=False)
-        cls.SURVEY = SurveyPage.objects.create(cost=10)
+        cls.SURVEY = SurveyPage.objects.create(cost=10, max_rating=4)
 
 
 class SurveyPurchaseCreateTestCase(SurveyPageTestCase):
@@ -168,9 +168,14 @@ class SurveyResponseCreateTestCase(SurveyPageTestCase):
             Question, subcategory__category__survey=self.SURVEY, field_type=Question.TEXT_FIELD)
         rating_question = get(
             Question, subcategory__category__survey=self.SURVEY, field_type=Question.RATING_FIELD,
-            max_rating=5, required=True)
+            required=True)
         rating_field_key = "question_%s" % rating_question.pk
         data = {"question_%s" % text_question.pk: "TEST"}
+
+        # Rating field should provide choices according to the "max_rating" of the survey
+        response = self.get(SurveyResponseCreate, public_id=self.PURCHASE_ID)
+        choices = response.context_data["form"].fields[rating_field_key].choices
+        self.assertEqual(len(choices), self.SURVEY.max_rating)
 
         # Required rating question should fail validation if not provided
         data[rating_field_key] = ""
@@ -179,7 +184,7 @@ class SurveyResponseCreateTestCase(SurveyPageTestCase):
         self.assertEqual(SurveyResponse.objects.count(), 0)
 
         # Rating question should fail validation if value is above max_rating
-        data[rating_field_key] = 10
+        data[rating_field_key] = self.SURVEY.max_rating + 1
         response = self.post(SurveyResponseCreate, public_id=self.PURCHASE_ID, data=data)
         self.assertFieldError(response, rating_field_key)
         self.assertEqual(SurveyResponse.objects.count(), 0)
@@ -197,13 +202,13 @@ class SurveyResponseCreateTestCase(SurveyPageTestCase):
         self.assertEqual(SurveyResponse.objects.count(), 0)
 
         # Rating question should pass validation if value is correct
-        data[rating_field_key] = 3
+        data[rating_field_key] = self.SURVEY.max_rating
         response = self.post(SurveyResponseCreate, public_id=self.PURCHASE_ID, data=data)
         survey_response = SurveyResponse.objects.get()
 
         # Verify the rating response was stored correctly
         rating_response = QuestionResponse.objects.get(question=rating_question)
-        self.assertEqual(rating_response.rating, 3)
+        self.assertEqual(rating_response.rating, self.SURVEY.max_rating)
         self.assertEqual(rating_response.text_response, "")
         self.assertEqual(rating_response.response, survey_response)
 

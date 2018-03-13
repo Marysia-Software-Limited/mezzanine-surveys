@@ -38,6 +38,7 @@ class SurveyResponseForm(forms.ModelForm):
         self.questions = self.purchase.survey.get_questions().order_by("field_type")
         super(SurveyResponseForm, self).__init__(*args, **kwargs)
 
+        max_rating = self.purchase.survey.max_rating
         for question in self.questions:
             field_key = "question_%s" % question.pk
 
@@ -46,8 +47,8 @@ class SurveyResponseForm(forms.ModelForm):
                     label=question.prompt,
                     widget=forms.RadioSelect,
                     choices=list(zip(
-                        range(1, question.max_rating + 1),
-                        range(1, question.max_rating + 1)))
+                        range(1, max_rating + 1),
+                        range(1, max_rating + 1)))
                 )
                 field.type = "choicefield"  # Required to apply the right CSS rules
             elif question.field_type == Question.TEXT_FIELD:

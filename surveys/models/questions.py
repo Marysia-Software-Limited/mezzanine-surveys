@@ -4,7 +4,6 @@ from __future__ import absolute_import, unicode_literals
 
 from django.db import models
 from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
 
@@ -53,13 +52,8 @@ class Question(Orderable):
 
     subcategory = models.ForeignKey(
         Subcategory, on_delete=models.CASCADE, related_name="questions")
-
     field_type = models.IntegerField(_("Question type"), choices=QUESTION_TYPES)
     prompt = models.CharField(_("Prompt"), max_length=300)
-    max_rating = models.PositiveSmallIntegerField(
-        _("Maximum rating"), default=5,
-        validators=[MinValueValidator(2), MaxValueValidator(10)],
-        help_text=_("Must be a number between 2 and 10"))
     required = models.BooleanField(_("Required"), default=True)
 
     def __str__(self):

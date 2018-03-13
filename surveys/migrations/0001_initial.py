@@ -11,8 +11,8 @@ import mezzanine.core.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pages', '0003_auto_20150527_1555'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        ('pages', '0003_auto_20150527_1555'),
     ]
 
     operations = [
@@ -37,7 +37,6 @@ class Migration(migrations.Migration):
                 ('_order', mezzanine.core.fields.OrderField(verbose_name='Order', null=True)),
                 ('field_type', models.IntegerField(verbose_name='Question type', choices=[(1, 'Rating'), (2, 'Text')])),
                 ('prompt', models.CharField(verbose_name='Prompt', max_length=300)),
-                ('max_rating', models.PositiveSmallIntegerField(verbose_name='Maximum rating', default=5, help_text='Must be a number between 2 and 10', validators=[django.core.validators.MinValueValidator(2), django.core.validators.MaxValueValidator(10)])),
                 ('required', models.BooleanField(verbose_name='Required', default=True)),
             ],
             options={
@@ -77,6 +76,7 @@ class Migration(migrations.Migration):
                 ('cost', models.DecimalField(verbose_name='Cost', default=0, max_digits=7, decimal_places=2)),
                 ('purchase_response', mezzanine.core.fields.RichTextField(verbose_name='Purchase response')),
                 ('completed_message', mezzanine.core.fields.RichTextField(verbose_name='Completed message', help_text='Message shown to users after completing the survey')),
+                ('max_rating', models.PositiveSmallIntegerField(verbose_name='Maximum rating', default=5, help_text='For rating questions. Must be a number between 2 and 10', validators=[django.core.validators.MinValueValidator(2), django.core.validators.MaxValueValidator(10)])),
                 ('report_explanation', mezzanine.core.fields.RichTextField(verbose_name='Explanation', help_text="Helping content shown before the results' detail")),
             ],
             options={

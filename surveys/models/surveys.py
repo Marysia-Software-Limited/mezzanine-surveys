@@ -5,8 +5,8 @@ from __future__ import unicode_literals
 import uuid
 
 from django.db import models
-from django.db.models import Max
 from django.core.urlresolvers import reverse
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
 
@@ -27,6 +27,10 @@ class SurveyPage(Page, RichText):
         _("Completed message"),
         help_text=_("Message shown to users after completing the survey"))
 
+    max_rating = models.PositiveSmallIntegerField(
+        _("Maximum rating"), default=5,
+        validators=[MinValueValidator(2), MaxValueValidator(10)],
+        help_text=_("For rating questions. Must be a number between 2 and 10"))
     report_explanation = RichTextField(
         _("Explanation"),
         help_text=_("Helping content shown before the results' detail"))
@@ -37,14 +41,6 @@ class SurveyPage(Page, RichText):
         """
         from .questions import Question
         return Question.objects.filter(subcategory__category__survey=self)
-
-    def get_max_rating(self):
-        """
-        Gets the max value for the 'max_rating' field in this survey's questions.
-        This will not get you the maximum score of the responses, but rather the max
-        allowed value for all instances of this survey.
-        """
-        return self.questions.aggregate(Max("max_rating"))["max_rating__max"]
 
     def get_requires_payment(self):
         return self.cost > 0

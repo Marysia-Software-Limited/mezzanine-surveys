@@ -29,7 +29,7 @@ surveypage_fieldsets = [
     }),
     (_("Instructions"), {
         "classes": ["collapse-closed"],
-        "fields": ["instructions", "completed_message"],
+        "fields": ["max_rating", "instructions", "completed_message"],
     }),
     (_("Report"), {
         "classes": ["collapse-closed"],
