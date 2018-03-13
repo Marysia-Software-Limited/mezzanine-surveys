@@ -11,48 +11,38 @@ from django.utils.translation import ugettext_lazy as _
 from mezzanine.core.fields import RichTextField
 from mezzanine.core.models import Orderable, TimeStamped
 
-from ..models import SurveyPage, SurveyPurchase
+from mezzy.utils.models import TitledInline
 
 
-@python_2_unicode_compatible
-class Category(models.Model):
+class Category(TitledInline):
     """
-    A Category that contains one or more Subcategories
+    A Category that contains one or more Subcategories.
     """
-    name = models.CharField(_("Name"), max_length=200)
+    survey = models.ForeignKey(
+        "surveys.SurveyPage", on_delete=models.CASCADE, related_name="categories")
     description = RichTextField(_("Description"))
 
     class Meta:
-        ordering = ["name"]
         verbose_name = _("category")
         verbose_name_plural = _("categories")
 
-    def __str__(self):
-        return self.name
 
-
-@python_2_unicode_compatible
-class Subcategory(models.Model):
+class Subcategory(TitledInline):
     """
-    A Subcategory that a Question belongs to
+    A Subcategory that contains one or more Questions.
     """
-    category = models.ForeignKey(Category, related_name="subcategories")
-    name = models.CharField(_("Name"), max_length=200)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="subcategories")
     description = RichTextField(_("Description"))
 
     class Meta:
-        ordering = ["category", "name"]
         verbose_name = _("subcategory")
         verbose_name_plural = _("subcategories")
-
-    def __str__(self):
-        return "%s | %s" % (self.category, self.name)
 
 
 @python_2_unicode_compatible
 class Question(Orderable):
     """
-    A question on a SurveyPage
+    A question on a SurveyPage.
     """
     RATING_FIELD = 1
     TEXT_FIELD = 2
@@ -61,8 +51,8 @@ class Question(Orderable):
         (TEXT_FIELD, "Text"),
     )
 
-    survey = models.ForeignKey(SurveyPage, related_name="questions")
-    subcategory = models.ForeignKey(Subcategory, related_name="questions", blank=True, null=True)
+    subcategory = models.ForeignKey(
+        Subcategory, on_delete=models.CASCADE, related_name="questions")
 
     field_type = models.IntegerField(_("Question type"), choices=QUESTION_TYPES)
     prompt = models.CharField(_("Prompt"), max_length=300)
@@ -86,7 +76,7 @@ class SurveyResponse(TimeStamped):
     Collection of all responses related to a Purchase.
     """
     purchase = models.ForeignKey(
-        SurveyPurchase, related_name="responses", on_delete=models.CASCADE)
+        "surveys.SurveyPurchase", related_name="responses", on_delete=models.CASCADE)
 
     def __str__(self):
         return str(self.created)

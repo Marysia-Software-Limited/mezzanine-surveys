@@ -12,7 +12,9 @@ from mezzanine.core.admin import TabularDynamicInlineAdmin
 from mezzanine.pages.admin import PageAdmin
 from mezzanine.utils.admin import admin_url
 
-from ..models import SurveyPage, Question, SurveyPurchase, SurveyPurchaseCode
+from mezzy.utils.admin import LinkedInlineMixin
+
+from ..models import SurveyPage, SurveyPurchase, SurveyPurchaseCode, Category
 
 
 surveypage_fieldsets = [
@@ -37,20 +39,27 @@ surveypage_fieldsets = [
 ]
 
 
-class SurveyPurchaseCodeInline(TabularDynamicInlineAdmin):
+class SurveyPurchaseCodeInlineAdmin(TabularDynamicInlineAdmin):
     model = SurveyPurchaseCode
 
 
-class QuestionInline(TabularDynamicInlineAdmin):
-    list_editable = ["_order"]
-    model = Question
+class CategoryInlineAdmin(LinkedInlineMixin):
+    """
+    Inline admin with links to the complete Category admin.
+    """
+    count_field = "subcategories"
+    link_text = _("Edit content and subcategories")
+    model = Category
 
 
 @admin.register(SurveyPage)
 class SurveyPageAdmin(PageAdmin):
+    """
+    Allows staff users to create and manage the available surveys.
+    """
     fieldsets = surveypage_fieldsets
     readonly_fields = ["get_purchases_link"]
-    inlines = [SurveyPurchaseCodeInline, QuestionInline]
+    inlines = [SurveyPurchaseCodeInlineAdmin, CategoryInlineAdmin]
 
     def get_purchases_link(self, obj):
         if obj.pk is None:
@@ -66,6 +75,9 @@ class SurveyPageAdmin(PageAdmin):
 
 @admin.register(SurveyPurchase)
 class SurveyPurchaseAdmin(admin.ModelAdmin):
+    """
+    Allows staff users to filter and edit completed purchases.
+    """
     list_display = [
         "purchaser", "survey", "amount", "payment_method", "transaction_id", "created"]
     list_filter = ["survey"]

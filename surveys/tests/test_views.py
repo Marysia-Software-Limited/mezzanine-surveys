@@ -147,7 +147,7 @@ class SurveyResponseCreateTestCase(SurveyPageTestCase):
     def test_access(self):
         # Add 5 questions to the survey
         for i in range(0, 5):
-            get(Question, survey=self.SURVEY)
+            get(Question, subcategory__category__survey=self.SURVEY)
 
         # Anon users can access the survey
         self.assert200(SurveyResponseCreate, public_id=self.PURCHASE_ID)
@@ -164,10 +164,11 @@ class SurveyResponseCreateTestCase(SurveyPageTestCase):
         Responses to questions in a survey are stored correctly.
         """
         # Create one text and one rating question
-        text_question = get(Question, survey=self.SURVEY, field_type=Question.TEXT_FIELD)
+        text_question = get(
+            Question, subcategory__category__survey=self.SURVEY, field_type=Question.TEXT_FIELD)
         rating_question = get(
-            Question, survey=self.SURVEY, field_type=Question.RATING_FIELD, max_rating=5,
-            required=True)
+            Question, subcategory__category__survey=self.SURVEY, field_type=Question.RATING_FIELD,
+            max_rating=5, required=True)
         rating_field_key = "question_%s" % rating_question.pk
         data = {"question_%s" % text_question.pk: "TEST"}
 

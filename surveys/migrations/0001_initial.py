@@ -2,17 +2,17 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
-import django.core.validators
 import uuid
 from django.conf import settings
+import django.core.validators
 import mezzanine.core.fields
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ('pages', '0003_auto_20150527_1555'),
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
@@ -20,13 +20,14 @@ class Migration(migrations.Migration):
             name='Category',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', primary_key=True, serialize=False, auto_created=True)),
-                ('name', models.CharField(verbose_name='Name', max_length=200)),
+                ('_order', mezzanine.core.fields.OrderField(verbose_name='Order', null=True)),
+                ('title', models.CharField(verbose_name='Title', max_length=100)),
                 ('description', mezzanine.core.fields.RichTextField(verbose_name='Description')),
             ],
             options={
                 'verbose_name': 'category',
                 'verbose_name_plural': 'categories',
-                'ordering': ['name'],
+                'ordering': ('_order',),
             },
         ),
         migrations.CreateModel(
@@ -56,14 +57,15 @@ class Migration(migrations.Migration):
             name='Subcategory',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', primary_key=True, serialize=False, auto_created=True)),
-                ('name', models.CharField(verbose_name='Name', max_length=200)),
+                ('_order', mezzanine.core.fields.OrderField(verbose_name='Order', null=True)),
+                ('title', models.CharField(verbose_name='Title', max_length=100)),
                 ('description', mezzanine.core.fields.RichTextField(verbose_name='Description')),
                 ('category', models.ForeignKey(related_name='subcategories', to='surveys.Category')),
             ],
             options={
                 'verbose_name': 'subcategory',
                 'verbose_name_plural': 'subcategories',
-                'ordering': ['category', 'name'],
+                'ordering': ('_order',),
             },
         ),
         migrations.CreateModel(
@@ -137,12 +139,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='question',
             name='subcategory',
-            field=models.ForeignKey(blank=True, null=True, related_name='questions', to='surveys.Subcategory'),
+            field=models.ForeignKey(related_name='questions', to='surveys.Subcategory'),
         ),
         migrations.AddField(
-            model_name='question',
+            model_name='category',
             name='survey',
-            field=models.ForeignKey(related_name='questions', to='surveys.SurveyPage'),
+            field=models.ForeignKey(related_name='categories', to='surveys.SurveyPage'),
         ),
         migrations.AlterUniqueTogether(
             name='surveypurchasecode',

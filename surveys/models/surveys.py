@@ -18,7 +18,7 @@ from mezzanine.pages.models import Page
 
 class SurveyPage(Page, RichText):
     """
-    Survey that contains a certain amount of questions.
+    Survey that's available for purchase.
     """
     instructions = RichTextField(_("Instructions"))
     cost = models.DecimalField(_("Cost"), max_digits=7, decimal_places=2, default=0)
@@ -30,6 +30,13 @@ class SurveyPage(Page, RichText):
     report_explanation = RichTextField(
         _("Explanation"),
         help_text=_("Helping content shown before the results' detail"))
+
+    def get_questions(self):
+        """
+        Collect all questions related to this survey.
+        """
+        from .questions import Question
+        return Question.objects.filter(subcategory__category__survey=self)
 
     def get_max_rating(self):
         """
@@ -50,7 +57,7 @@ class SurveyPage(Page, RichText):
 @python_2_unicode_compatible
 class SurveyPurchaseCode(models.Model):
     """
-    Code to gain access to a Survey
+    Code to gain access to a Survey without paying.
     """
     survey = models.ForeignKey(SurveyPage, related_name="purchase_codes")
     code = models.CharField(

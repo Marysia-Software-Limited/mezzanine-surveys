@@ -20,9 +20,10 @@ class SurveyPurchaseMixin(object):
     """
     @cached_property
     def purchase(self):
-        return get_object_or_404(
-            SurveyPurchase.objects.select_related("survey").prefetch_related("survey__questions"),
-            public_id=self.kwargs["public_id"])
+        qs = SurveyPurchase.objects.all() \
+            .select_related("survey") \
+            .prefetch_related("survey__categories__subcategories__questions")
+        return get_object_or_404(qs, public_id=self.kwargs["public_id"])
 
     def get_context_data(self, **kwargs):
         kwargs.update({

@@ -35,9 +35,10 @@ class SurveyResponseForm(forms.ModelForm):
         Create dynamic fields for each question in the SurveyPage.
         """
         self.purchase = kwargs.pop("purchase")
+        self.questions = self.purchase.survey.get_questions().order_by("field_type")
         super(SurveyResponseForm, self).__init__(*args, **kwargs)
 
-        for question in self.purchase.survey.questions.all().order_by("field_type"):
+        for question in self.questions:
             field_key = "question_%s" % question.pk
 
             if question.field_type == Question.RATING_FIELD:
@@ -69,7 +70,7 @@ class SurveyResponseForm(forms.ModelForm):
             return survey_response  # Bail if the SurveyResponse wasn't saved to the DB
 
         question_responses = []
-        for question in self.purchase.survey.questions.all():
+        for question in self.questions:
             value = self.cleaned_data.get("question_%s" % question.pk)
             question_responses.append(QuestionResponse(
                 response=survey_response,
