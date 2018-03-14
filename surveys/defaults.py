@@ -7,3 +7,9 @@ register_setting(
     default="surveys.views.SurveyPurchaseCreate",
     editable=False,
 )
+
+register_setting(
+    name="SURVEYS_PURCHASE_REPORT_VIEW",
+    default="surveys.views.SurveyPurchaseReport",
+    editable=False,
+)

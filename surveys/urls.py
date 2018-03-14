@@ -10,11 +10,12 @@ from . import views
 
 UUID_RE = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 
-survey_purchase_view = import_view(settings.SURVEYS_PURCHASE_CREATE_VIEW)
+purchase_create_view = import_view(settings.SURVEYS_PURCHASE_CREATE_VIEW)
+purchase_report_view = import_view(settings.SURVEYS_PURCHASE_REPORT_VIEW)
 
 urlpatterns = [
     url("^purchase/(?P<slug>.*)/$",
-        survey_purchase_view, name="purchase_create"),
+        purchase_create_view, name="purchase_create"),
     url("^manage/(?P<public_id>%s)/$" % UUID_RE,
         views.SurveyPurchaseDetail.as_view(), name="purchase_detail"),
     url("^take/(?P<public_id>%s)/$" % UUID_RE,
@@ -22,5 +23,5 @@ urlpatterns = [
     url("^take/(?P<public_id>%s)/complete/$" % UUID_RE,
         views.SurveyResponseComplete.as_view(), name="response_complete"),
     url("^report/(?P<public_id>%s)/$" % UUID_RE,
-        views.SurveyPurchaseReport.as_view(), name="purchase_report"),
+        purchase_report_view, name="purchase_report"),
 ]
