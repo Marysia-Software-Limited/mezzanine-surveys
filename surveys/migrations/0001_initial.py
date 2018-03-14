@@ -3,16 +3,16 @@ from __future__ import unicode_literals
 
 from django.db import migrations, models
 import uuid
+import mezzanine.core.fields
 from django.conf import settings
 import django.core.validators
-import mezzanine.core.fields
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ('pages', '0003_auto_20150527_1555'),
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
@@ -40,6 +40,8 @@ class Migration(migrations.Migration):
                 ('required', models.BooleanField(verbose_name='Required', default=True)),
             ],
             options={
+                'verbose_name': 'question',
+                'verbose_name_plural': 'questions',
                 'ordering': ('_order',),
             },
         ),
@@ -98,6 +100,7 @@ class Migration(migrations.Migration):
                 ('amount', models.DecimalField(verbose_name='Amount', blank=True, null=True, max_digits=8, decimal_places=2)),
                 ('notes', models.TextField(verbose_name='Notes', blank=True)),
                 ('report_generated', models.DateTimeField(verbose_name='Report generated', blank=True, null=True)),
+                ('report_cache', models.TextField(verbose_name='Report (cached)', default='[]')),
                 ('purchaser', models.ForeignKey(related_name='surveys', to=settings.AUTH_USER_MODEL)),
                 ('survey', models.ForeignKey(related_name='purchases', to='surveys.SurveyPage')),
             ],

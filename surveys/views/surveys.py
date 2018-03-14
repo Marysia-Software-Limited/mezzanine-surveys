@@ -1,9 +1,10 @@
 from __future__ import absolute_import, unicode_literals
 
+from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.db.models import F
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 from django.views import generic
@@ -106,7 +107,7 @@ class SurveyPurchaseCreate(LoginRequiredMixin, FormMessagesMixin, generic.Create
 
 class SurveyPurchaseDetail(UserPassesTestMixin, SurveyPurchaseMixin, generic.TemplateView):
     """
-    Dashboard for a survey accessible after a user has purchased access to it.
+    Allows users to manage a survey they've purchased.
     """
     template_name = "surveys/survey_purchase_detail.html"
 
@@ -144,3 +145,16 @@ class SurveyResponseComplete(SurveyPurchaseMixin, generic.TemplateView):
     Displays a confirmation message after the user has completed a survey.
     """
     template_name = "surveys/survey_response_complete.html"
+
+
+class SurveyPurchaseReport(SurveyPurchaseDetail):
+    """
+    Allow users to generate a report for their survey when requested via POST.
+    The report is stored as JSON in the SurveyPurchase and can be retrieved via GET.
+    """
+    template_name = "surveys/survey_purchase_report.html"
+
+    def post(self, request, *args, **kwargs):
+        self.purchase.generate_report()
+        messages.success(request, _("Report generated successfully"), fail_silently=True)
+        return redirect(self.purchase.get_report_url())

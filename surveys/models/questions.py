@@ -3,7 +3,6 @@
 from __future__ import absolute_import, unicode_literals
 
 from django.db import models
-from django.core.exceptions import ValidationError
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
 
@@ -25,6 +24,28 @@ class Category(TitledInline):
         verbose_name = _("category")
         verbose_name_plural = _("categories")
 
+    def get_report_data(self, purchase):
+        """
+        Returns a serializable object with report data for this category.
+        """
+        rating_responses = QuestionResponse.objects.filter(
+            question__subcategory__category=self,
+            question__field_type=Question.RATING_FIELD,
+            response__purchase=purchase)
+        avg = rating_responses.aggregate(models.Avg("rating"))
+        frequencies = purchase.survey.get_frequencies(rating_responses)
+        return {
+            "id": self.pk,
+            "title": self.title,
+            "description": self.description,
+            "rating": {
+                "count": rating_responses.count(),
+                "average": avg["rating__avg"],
+                "frequencies": frequencies,
+            },
+            "subcategories": [s.get_report_data(purchase) for s in self.subcategories.all()],
+        }
+
 
 class Subcategory(TitledInline):
     """
@@ -36,6 +57,28 @@ class Subcategory(TitledInline):
     class Meta:
         verbose_name = _("subcategory")
         verbose_name_plural = _("subcategories")
+
+    def get_report_data(self, purchase):
+        """
+        Returns a serializable object with report data for this subcategory.
+        """
+        rating_responses = QuestionResponse.objects.filter(
+            question__subcategory=self,
+            question__field_type=Question.RATING_FIELD,
+            response__purchase=purchase)
+        avg = rating_responses.aggregate(models.Avg("rating"))
+        frequencies = purchase.survey.get_frequencies(rating_responses)
+        return {
+            "id": self.pk,
+            "title": self.title,
+            "description": self.description,
+            "rating": {
+                "count": rating_responses.count(),
+                "average": avg["rating__avg"],
+                "frequencies": frequencies,
+            },
+            "questions": [q.get_report_data(purchase) for q in self.questions.all()],
+        }
 
 
 @python_2_unicode_compatible
@@ -56,12 +99,37 @@ class Question(Orderable):
     prompt = models.CharField(_("Prompt"), max_length=300)
     required = models.BooleanField(_("Required"), default=True)
 
+    class Meta:
+        verbose_name = _("question")
+        verbose_name_plural = _("questions")
+
     def __str__(self):
         return self.prompt
 
-    def clean(self):
-        if self.field_type == self.RATING_FIELD and not self.subcategory:
-            raise ValidationError(_("A Subcategory is required for rating questions"))
+    def get_report_data(self, purchase):
+        """
+        Returns a serializable object with report data for this question.
+        """
+        rating_responses = QuestionResponse.objects.filter(
+            question=self,
+            question__field_type=Question.RATING_FIELD,
+            response__purchase=purchase)
+        text_responses = QuestionResponse.objects.filter(
+            question=self,
+            question__field_type=Question.TEXT_FIELD,
+            response__purchase=purchase)
+        avg = rating_responses.aggregate(models.Avg("rating"))
+        frequencies = purchase.survey.get_frequencies(rating_responses)
+        return {
+            "id": self.pk,
+            "prompt": self.prompt,
+            "rating": {
+                "count": rating_responses.count(),
+                "average": avg["rating__avg"],
+                "frequencies": frequencies,
+            },
+            "text_responses": list(text_responses.values_list("text_response", flat=True)),
+        }
 
 
 @python_2_unicode_compatible

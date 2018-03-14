@@ -2,12 +2,16 @@
 
 from __future__ import unicode_literals
 
+import json
 import uuid
+
+from builtins import range
 
 from django.db import models
 from django.core.urlresolvers import reverse
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.encoding import python_2_unicode_compatible
+from django.utils.timezone import now
 from django.utils.translation import ugettext_lazy as _
 
 from mezzanine.conf import settings
@@ -41,6 +45,21 @@ class SurveyPage(Page, RichText):
         """
         from .questions import Question
         return Question.objects.filter(subcategory__category__survey=self)
+
+    def get_rating_choices(self):
+        return range(1, self.max_rating + 1)
+
+    def get_frequencies(self, responses):
+        """
+        Get response frequencies as tuples for each rating in this survey.
+        `responses` should be a QuestionResponse queryset.
+        """
+        frequencies = dict(responses.values_list("rating").annotate(models.Count("rating")))
+        # Manually add any rating value with a frequency of zero
+        return [
+            (i, frequencies[i]) if i in frequencies else (i, 0)
+            for i in self.get_rating_choices()
+        ]
 
     def get_requires_payment(self):
         return self.cost > 0
@@ -94,6 +113,14 @@ class SurveyPurchase(TimeStamped):
     notes = models.TextField(_("Notes"), blank=True)
 
     report_generated = models.DateTimeField(_("Report generated"), blank=True, null=True)
+    report_cache = models.TextField(_("Report (cached)"), default="[]")
+
+    class Meta:
+        verbose_name = _("purchase")
+        verbose_name_plural = _("purchases")
+
+    def __str__(self):
+        return str(self.survey)
 
     def get_absolute_url(self):
         return reverse("surveys:purchase_detail", args=[self.public_id])
@@ -104,9 +131,34 @@ class SurveyPurchase(TimeStamped):
     def get_complete_url(self):
         return reverse("surveys:response_complete", args=[self.public_id])
 
-    class Meta:
-        verbose_name = _("purchase")
-        verbose_name_plural = _("purchases")
+    def get_report_url(self):
+        return reverse("surveys:purchase_report", args=[self.public_id])
 
-    def __str__(self):
-        return str(self.survey)
+    def generate_report(self):
+        """
+        Generate a report of all responses related to this purchase.
+        A cached copy will be stored in self.report_cache.
+        The report includes nested data in the shape of Category / Subcategory / Question.
+        """
+        from .questions import Question, QuestionResponse
+        rating_responses = QuestionResponse.objects.filter(
+            response__purchase=self, question__field_type=Question.RATING_FIELD)
+        report = {
+            "rating": {
+                "count": rating_responses.count(),
+                "average": rating_responses.aggregate(models.Avg("rating"))["rating__avg"],
+                "frequencies": self.survey.get_frequencies(rating_responses),
+            },
+            "categories": [
+                c.get_report_data(purchase=self) for c in self.survey.categories.all()]
+        }
+        self.report_cache = json.dumps(report)
+        self.report_generated = now()
+        self.save()
+        return report
+
+    def get_report_as_json(self):
+        """
+        Load the cached report as JSON.
+        """
+        return json.loads(self.report_cache)

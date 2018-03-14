@@ -1,7 +1,5 @@
 from __future__ import absolute_import, unicode_literals
 
-from future.builtins import zip
-
 from django import forms
 from django.utils.translation import ugettext_lazy as _
 
@@ -38,7 +36,6 @@ class SurveyResponseForm(forms.ModelForm):
         self.questions = self.purchase.survey.get_questions().order_by("field_type")
         super(SurveyResponseForm, self).__init__(*args, **kwargs)
 
-        max_rating = self.purchase.survey.max_rating
         for question in self.questions:
             field_key = "question_%s" % question.pk
 
@@ -46,10 +43,7 @@ class SurveyResponseForm(forms.ModelForm):
                 field = forms.ChoiceField(
                     label=question.prompt,
                     widget=forms.RadioSelect,
-                    choices=list(zip(
-                        range(1, max_rating + 1),
-                        range(1, max_rating + 1)))
-                )
+                    choices=((i, i) for i in self.purchase.survey.get_rating_choices()))
                 field.type = "choicefield"  # Required to apply the right CSS rules
             elif question.field_type == Question.TEXT_FIELD:
                 field = forms.CharField(label=question.prompt, widget=forms.Textarea)

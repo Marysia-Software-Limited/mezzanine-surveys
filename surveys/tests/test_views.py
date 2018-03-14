@@ -1,6 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
-from builtins import range
+from builtins import range, zip
 
 from django.contrib.auth.models import User
 from django.test import TestCase
@@ -12,9 +12,11 @@ from mezzanine.core.models import CONTENT_STATUS_DRAFT, CONTENT_STATUS_PUBLISHED
 from mezzy.utils.tests import ViewTestMixin
 
 from surveys.models import (
-    SurveyPage, SurveyPurchase, SurveyPurchaseCode, SurveyResponse, Question, QuestionResponse)
+    SurveyPage, SurveyPurchase, SurveyPurchaseCode, SurveyResponse, Category, Subcategory,
+    Question, QuestionResponse)
 from surveys.views import (
-    SurveyPurchaseCreate, SurveyPurchaseDetail, SurveyResponseCreate, SurveyResponseComplete)
+    SurveyPurchaseCreate, SurveyPurchaseDetail, SurveyResponseCreate, SurveyResponseComplete,
+    SurveyPurchaseReport)
 
 
 class SurveyPageTestCase(ViewTestMixin, TestCase):
@@ -173,7 +175,7 @@ class SurveyResponseCreateTestCase(SurveyPageTestCase):
         data = {"question_%s" % text_question.pk: "TEST"}
 
         # Rating field should provide choices according to the "max_rating" of the survey
-        response = self.get(SurveyResponseCreate, public_id=self.PURCHASE_ID)
+        response = self.assert200(SurveyResponseCreate, public_id=self.PURCHASE_ID)
         choices = response.context_data["form"].fields[rating_field_key].choices
         self.assertEqual(len(choices), self.SURVEY.max_rating)
 
@@ -224,3 +226,166 @@ class SurveyResponseCreateTestCase(SurveyPageTestCase):
     def test_survey_response_complete(self):
         response = self.assert200(SurveyResponseComplete, public_id=self.PURCHASE.public_id)
         self.assertEqual(response.context_data["survey"], self.SURVEY)
+
+
+class SurveyPurchaseReportTestCase(SurveyPageTestCase):
+
+    def setUp(self):
+        """
+        Create a complex survey and submit responses to it.
+        Data from the responses will then be tested for consistency.
+        """
+        super(SurveyPurchaseReportTestCase, self).setUp()
+        self.purchase = get(
+            SurveyPurchase, survey=self.SURVEY, purchaser=self.USER, purchased_with_code=None,
+            report_generated=None)
+        self.purchase_id = str(self.purchase.public_id)
+
+        # Create 6 rating questions and 2 text questions
+        # Distribute them in 2 categories and 3 subcategories
+        category1 = get(Category, survey=self.SURVEY)
+        subcategory1 = get(Subcategory, category=category1)
+        get(Question, subcategory=subcategory1, field_type=Question.RATING_FIELD)
+        get(Question, subcategory=subcategory1, field_type=Question.RATING_FIELD)
+        subcategory2 = get(Subcategory, category=category1)
+        get(Question, subcategory=subcategory2, field_type=Question.RATING_FIELD)
+        get(Question, subcategory=subcategory2, field_type=Question.RATING_FIELD)
+
+        category2 = get(Category, survey=self.SURVEY)
+        subcategory3 = get(Subcategory, category=category2)
+        get(Question, subcategory=subcategory3, field_type=Question.RATING_FIELD)
+        get(Question, subcategory=subcategory3, field_type=Question.RATING_FIELD)
+        get(Question, subcategory=subcategory3, field_type=Question.TEXT_FIELD)
+        get(Question, subcategory=subcategory3, field_type=Question.TEXT_FIELD)
+
+        # Create 3 SurveyResponses with 8 QuestionResponses each (24 total)
+        # This data will be checked in test_report()
+        questions = self.SURVEY.get_questions()
+        response_values = [
+            [1, 2, 3, 4, 1, 4, "Text 1", "Text 2"],
+            [1, 2, 3, 4, 2, 3, "Text 3", "Text 4"],
+            [1, 2, 3, 4, 3, 2, "Text 5", "Text 6"],
+        ]
+        for value_list in response_values:
+            survey_response = get(SurveyResponse, purchase=self.purchase)
+            question_responses = []
+            for question, value in zip(questions, value_list):
+                question_responses.append(QuestionResponse(
+                    question=question, response=survey_response,
+                    rating=value if question.field_type == Question.RATING_FIELD else None,
+                    text_response=value if question.field_type == Question.TEXT_FIELD else ""))
+            QuestionResponse.objects.bulk_create(question_responses)
+
+    def test_access(self):
+        # Anon users cannot access the report
+        self.assertLoginRequired(SurveyPurchaseReport, public_id=self.purchase_id)
+
+        # Logged-in users can access the report
+        response = self.assert200(SurveyPurchaseReport, public_id=self.purchase_id, user=self.USER)
+
+        # The report should be empty
+        self.assertEqual(response.context_data["purchase"].get_report_as_json(), [])
+
+    def test_report(self):
+        """
+        The report should be generated when POSTing to the view.
+        It should then be retrievable via GET.
+        """
+        # POST the form to generate the report
+        response = self.post(SurveyPurchaseReport, public_id=self.purchase_id, user=self.USER)
+        self.assertEqual(response["location"], self.purchase.get_report_url())
+
+        # GET the page and verify all the report data
+        # The report data is based on the QuestionResponses added in setUp()
+        response = self.assert200(
+            SurveyPurchaseReport, public_id=self.purchase_id, user=self.USER)
+        report = response.context_data["purchase"].get_report_as_json()
+        self.assertEqual(report["rating"]["count"], 18)
+        self.assertEqual(report["rating"]["average"], 2.5)
+        self.assertListEqual(report["rating"]["frequencies"], [[1, 4], [2, 5], [3, 5], [4, 4]])
+
+        # Category 1
+        cat1 = report["categories"][0]
+        self.assertEqual(cat1["rating"]["count"], 12)
+        self.assertEqual(cat1["rating"]["average"], 2.5)
+        self.assertListEqual(cat1["rating"]["frequencies"], [[1, 3], [2, 3], [3, 3], [4, 3]])
+
+        # Subcategory 1
+        sub1 = cat1["subcategories"][0]
+        self.assertEqual(sub1["rating"]["count"], 6)
+        self.assertEqual(sub1["rating"]["average"], 1.5)
+        self.assertListEqual(sub1["rating"]["frequencies"], [[1, 3], [2, 3], [3, 0], [4, 0]])
+
+        # Question 1
+        q1 = sub1["questions"][0]
+        self.assertEqual(q1["rating"]["count"], 3)
+        self.assertEqual(q1["rating"]["average"], 1)
+        self.assertListEqual(q1["rating"]["frequencies"], [[1, 3], [2, 0], [3, 0], [4, 0]])
+        self.assertListEqual(q1["text_responses"], [])
+
+        # Question 2
+        q2 = sub1["questions"][1]
+        self.assertEqual(q2["rating"]["count"], 3)
+        self.assertEqual(q2["rating"]["average"], 2)
+        self.assertListEqual(q2["rating"]["frequencies"], [[1, 0], [2, 3], [3, 0], [4, 0]])
+        self.assertListEqual(q2["text_responses"], [])
+
+        # Subcategory 2
+        sub2 = cat1["subcategories"][1]
+        self.assertEqual(sub2["rating"]["count"], 6)
+        self.assertEqual(sub2["rating"]["average"], 3.5)
+        self.assertListEqual(sub2["rating"]["frequencies"], [[1, 0], [2, 0], [3, 3], [4, 3]])
+
+        # Question 3
+        q3 = sub2["questions"][0]
+        self.assertEqual(q3["rating"]["count"], 3)
+        self.assertEqual(q3["rating"]["average"], 3)
+        self.assertListEqual(q3["rating"]["frequencies"], [[1, 0], [2, 0], [3, 3], [4, 0]])
+        self.assertListEqual(q3["text_responses"], [])
+
+        # Question 4
+        q4 = sub2["questions"][1]
+        self.assertEqual(q4["rating"]["count"], 3)
+        self.assertEqual(q4["rating"]["average"], 4)
+        self.assertListEqual(q4["rating"]["frequencies"], [[1, 0], [2, 0], [3, 0], [4, 3]])
+        self.assertListEqual(q4["text_responses"], [])
+
+        # Category 2
+        cat2 = report["categories"][1]
+        self.assertEqual(cat2["rating"]["count"], 6)
+        self.assertEqual(cat2["rating"]["average"], 2.5)
+        self.assertListEqual(cat2["rating"]["frequencies"], [[1, 1], [2, 2], [3, 2], [4, 1]])
+
+        # Subcategory 3
+        sub3 = cat2["subcategories"][0]
+        self.assertEqual(sub3["rating"]["count"], 6)
+        self.assertEqual(sub3["rating"]["average"], 2.5)
+        self.assertListEqual(sub3["rating"]["frequencies"], [[1, 1], [2, 2], [3, 2], [4, 1]])
+
+        # Question 5
+        q5 = sub3["questions"][0]
+        self.assertEqual(q5["rating"]["count"], 3)
+        self.assertEqual(q5["rating"]["average"], 2)
+        self.assertListEqual(q5["rating"]["frequencies"], [[1, 1], [2, 1], [3, 1], [4, 0]])
+        self.assertListEqual(q5["text_responses"], [])
+
+        # Question 6
+        q6 = sub3["questions"][1]
+        self.assertEqual(q6["rating"]["count"], 3)
+        self.assertEqual(q6["rating"]["average"], 3)
+        self.assertListEqual(q6["rating"]["frequencies"], [[1, 0], [2, 1], [3, 1], [4, 1]])
+        self.assertListEqual(q6["text_responses"], [])
+
+        # Question 7
+        q7 = sub3["questions"][2]
+        self.assertEqual(q7["rating"]["count"], 0)
+        self.assertEqual(q7["rating"]["average"], None)
+        self.assertListEqual(q7["rating"]["frequencies"], [[1, 0], [2, 0], [3, 0], [4, 0]])
+        self.assertListEqual(q7["text_responses"], ["Text 1", "Text 3", "Text 5"])
+
+        # Question 8
+        q8 = sub3["questions"][3]
+        self.assertEqual(q8["rating"]["count"], 0)
+        self.assertEqual(q8["rating"]["average"], None)
+        self.assertListEqual(q8["rating"]["frequencies"], [[1, 0], [2, 0], [3, 0], [4, 0]])
+        self.assertListEqual(q8["text_responses"], ["Text 2", "Text 4", "Text 6"])
