@@ -101,7 +101,7 @@ class Migration(migrations.Migration):
                 ('notes', models.TextField(verbose_name='Notes', blank=True)),
                 ('report_generated', models.DateTimeField(verbose_name='Report generated', blank=True, null=True)),
                 ('report_cache', models.TextField(verbose_name='Report (cached)', default='[]')),
-                ('purchaser', models.ForeignKey(related_name='surveys', to=settings.AUTH_USER_MODEL)),
+                ('purchaser', models.ForeignKey(related_name='survey_purchases', to=settings.AUTH_USER_MODEL)),
                 ('survey', models.ForeignKey(related_name='purchases', to='surveys.SurveyPage')),
             ],
             options={

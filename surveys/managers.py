@@ -3,6 +3,21 @@ from __future__ import absolute_import, unicode_literals
 from django.db.models import QuerySet, Avg, Count
 
 
+class SurveyPurchaseQuerySet(QuerySet):
+
+    def open(self):
+        """
+        A purchase if considered open if the report date has not been set.
+        """
+        return self.filter(report_generated__isnull=True)
+
+    def closed(self):
+        """
+        A purchase is considered closed if the report date has been set.
+        """
+        return self.filter(report_generated__isnull=False)
+
+
 class RatingDataQuerySet(QuerySet):
     """
     Provides convenience methods for models that retrieve rating data.

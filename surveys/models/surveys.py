@@ -19,6 +19,8 @@ from mezzanine.core.fields import RichTextField
 from mezzanine.core.models import RichText, TimeStamped
 from mezzanine.pages.models import Page
 
+from ..managers import SurveyPurchaseQuerySet
+
 
 class SurveyPage(Page, RichText):
     """
@@ -90,8 +92,9 @@ class SurveyPurchase(TimeStamped):
     """
     A record of a user purchasing a Survey.
     """
-    survey = models.ForeignKey(SurveyPage, related_name="purchases")
-    purchaser = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="surveys")
+    survey = models.ForeignKey(SurveyPage, on_delete=models.CASCADE, related_name="purchases")
+    purchaser = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="survey_purchases")
     public_id = models.UUIDField(db_index=True, default=uuid.uuid4, editable=False)
 
     transaction_id = models.CharField(_("Transaction ID"), max_length=200, blank=True)
@@ -102,6 +105,8 @@ class SurveyPurchase(TimeStamped):
 
     report_generated = models.DateTimeField(_("Report generated"), blank=True, null=True)
     report_cache = models.TextField(_("Report (cached)"), default="[]")
+
+    objects = SurveyPurchaseQuerySet.as_manager()
 
     class Meta:
         verbose_name = _("purchase")
