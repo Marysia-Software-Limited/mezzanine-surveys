@@ -22,23 +22,17 @@
 			</thead>
 			<tbody>
 			{% for category in report.categories %}
-				{% if category.rating.count %}
-					{% include "surveys/includes/category_row.html" with category=category %}
-				{% endif %}
+				{% include "surveys/includes/category_row.html" with category=category %}
 			{% endfor %}
 			</tbody>
 		</table>
 
 		<h2>Text responses</h2>
-		{% for category in report.categories %}
-			{% for subcategory in category.subcategories %}
-				{% for question in subcategory.questions %}
-					{% if question.text_responses %}
-					<h3>{{ question.prompt }}</h3>
-					{% for text in question.text_responses %}{{ text|linebreaks }}<hr>{% endfor %}
-					{% endif %}
-				{% endfor %}
-			{% endfor %}
+		{% for question in report.text_questions %}
+			<h3>{{ question.prompt }}</h3>
+			{% for text in question.responses %}{{ text|linebreaks }}<hr>{% endfor %}
+		{% empty %}
+			<h3>No responses for this survey</h3>
 		{% endfor %}
 
 	{% else %}

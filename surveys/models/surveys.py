@@ -143,14 +143,24 @@ class SurveyPurchase(TimeStamped):
         from .questions import Question, QuestionResponse
         rating_responses = QuestionResponse.objects.filter(
             response__purchase=self, question__field_type=Question.RATING_FIELD)
+
+        text_questions = []
+        for question in self.survey.get_questions().filter(field_type=Question.TEXT_FIELD):
+            responses = question.responses.filter(response__purchase=self)
+            text_questions.append({
+                "id": question.pk,
+                "prompt": question.prompt,
+                "responses": list(responses.values_list("text_response", flat=True)),
+            })
+
         report = {
             "rating": {
                 "count": rating_responses.count(),
                 "average": rating_responses.aggregate(models.Avg("rating"))["rating__avg"],
                 "frequencies": self.survey.get_frequencies(rating_responses),
             },
-            "categories": [
-                c.get_report_data(purchase=self) for c in self.survey.categories.all()]
+            "categories": self.survey.categories.get_rating_data(purchase=self),
+            "text_questions": text_questions,
         }
         self.report_cache = json.dumps(report)
         self.report_generated = now()

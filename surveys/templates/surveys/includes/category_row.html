@@ -11,7 +11,5 @@
 	<td>{{ category.rating.average|floatformat:2 }}</td>
 </tr>
 {% for subcategory in category.subcategories %}
-	{% if subcategory.rating.count %}
-		{% include "surveys/includes/subcategory_row.html" with subcategory=subcategory %}
-	{% endif %}
+	{% include "surveys/includes/subcategory_row.html" with subcategory=subcategory %}
 {% endfor %}

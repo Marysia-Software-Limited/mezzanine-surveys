@@ -11,13 +11,11 @@
 	<td>{{ subcategory.rating.average|floatformat:2 }}</td>
 </tr>
 {% for question in subcategory.questions %}
-	{% if question.rating.count %}
-		<tr>
-			<td>{{ question.prompt }}</td>
-			{% for i, freq in question.rating.frequencies %}
-				<td>{{ freq }}</td>
-			{% endfor %}
-			<td>{{ question.rating.average|floatformat:2 }}</td>
-		</tr>
-	{% endif %}
+	<tr>
+		<td>{{ question.prompt }}</td>
+		{% for i, freq in question.rating.frequencies %}
+			<td>{{ freq }}</td>
+		{% endfor %}
+		<td>{{ question.rating.average|floatformat:2 }}</td>
+	</tr>
 {% endfor %}

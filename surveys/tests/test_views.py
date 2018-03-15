@@ -321,14 +321,12 @@ class SurveyPurchaseReportTestCase(SurveyPageTestCase):
         self.assertEqual(q1["rating"]["count"], 3)
         self.assertEqual(q1["rating"]["average"], 1)
         self.assertListEqual(q1["rating"]["frequencies"], [[1, 3], [2, 0], [3, 0], [4, 0]])
-        self.assertListEqual(q1["text_responses"], [])
 
         # Question 2
         q2 = sub1["questions"][1]
         self.assertEqual(q2["rating"]["count"], 3)
         self.assertEqual(q2["rating"]["average"], 2)
         self.assertListEqual(q2["rating"]["frequencies"], [[1, 0], [2, 3], [3, 0], [4, 0]])
-        self.assertListEqual(q2["text_responses"], [])
 
         # Subcategory 2
         sub2 = cat1["subcategories"][1]
@@ -341,14 +339,12 @@ class SurveyPurchaseReportTestCase(SurveyPageTestCase):
         self.assertEqual(q3["rating"]["count"], 3)
         self.assertEqual(q3["rating"]["average"], 3)
         self.assertListEqual(q3["rating"]["frequencies"], [[1, 0], [2, 0], [3, 3], [4, 0]])
-        self.assertListEqual(q3["text_responses"], [])
 
         # Question 4
         q4 = sub2["questions"][1]
         self.assertEqual(q4["rating"]["count"], 3)
         self.assertEqual(q4["rating"]["average"], 4)
         self.assertListEqual(q4["rating"]["frequencies"], [[1, 0], [2, 0], [3, 0], [4, 3]])
-        self.assertListEqual(q4["text_responses"], [])
 
         # Category 2
         cat2 = report["categories"][1]
@@ -367,25 +363,17 @@ class SurveyPurchaseReportTestCase(SurveyPageTestCase):
         self.assertEqual(q5["rating"]["count"], 3)
         self.assertEqual(q5["rating"]["average"], 2)
         self.assertListEqual(q5["rating"]["frequencies"], [[1, 1], [2, 1], [3, 1], [4, 0]])
-        self.assertListEqual(q5["text_responses"], [])
 
         # Question 6
         q6 = sub3["questions"][1]
         self.assertEqual(q6["rating"]["count"], 3)
         self.assertEqual(q6["rating"]["average"], 3)
         self.assertListEqual(q6["rating"]["frequencies"], [[1, 0], [2, 1], [3, 1], [4, 1]])
-        self.assertListEqual(q6["text_responses"], [])
 
         # Question 7
-        q7 = sub3["questions"][2]
-        self.assertEqual(q7["rating"]["count"], 0)
-        self.assertEqual(q7["rating"]["average"], None)
-        self.assertListEqual(q7["rating"]["frequencies"], [[1, 0], [2, 0], [3, 0], [4, 0]])
-        self.assertListEqual(q7["text_responses"], ["Text 1", "Text 3", "Text 5"])
+        q7 = report["text_questions"][0]
+        self.assertListEqual(q7["responses"], ["Text 1", "Text 3", "Text 5"])
 
         # Question 8
-        q8 = sub3["questions"][3]
-        self.assertEqual(q8["rating"]["count"], 0)
-        self.assertEqual(q8["rating"]["average"], None)
-        self.assertListEqual(q8["rating"]["frequencies"], [[1, 0], [2, 0], [3, 0], [4, 0]])
-        self.assertListEqual(q8["text_responses"], ["Text 2", "Text 4", "Text 6"])
+        q8 = report["text_questions"][1]
+        self.assertListEqual(q8["responses"], ["Text 2", "Text 4", "Text 6"])

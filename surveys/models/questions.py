@@ -11,6 +11,8 @@ from mezzanine.core.models import Orderable, TimeStamped
 
 from mezzy.utils.models import TitledInline
 
+from ..managers import RatingDataQuerySet
+
 
 class Category(TitledInline):
     """
@@ -20,30 +22,37 @@ class Category(TitledInline):
         "surveys.SurveyPage", on_delete=models.CASCADE, related_name="categories")
     description = RichTextField(_("Description"))
 
+    objects = RatingDataQuerySet.as_manager()
+
     class Meta:
         verbose_name = _("category")
         verbose_name_plural = _("categories")
 
-    def get_report_data(self, purchase):
+    def get_rating_data(self, purchase):
         """
-        Returns a serializable object with report data for this category.
+        Returns a serializable object with rating data for this category.
         """
         rating_responses = QuestionResponse.objects.filter(
             question__subcategory__category=self,
             question__field_type=Question.RATING_FIELD,
             response__purchase=purchase)
-        avg = rating_responses.aggregate(models.Avg("rating"))
+
+        count = rating_responses.count()
+        if not count:
+            return None  # Don't return data if no rating responses exist
+
+        average = rating_responses.aggregate(models.Avg("rating"))["rating__avg"]
         frequencies = purchase.survey.get_frequencies(rating_responses)
         return {
             "id": self.pk,
             "title": self.title,
             "description": self.description,
             "rating": {
-                "count": rating_responses.count(),
-                "average": avg["rating__avg"],
+                "count": count,
+                "average": average,
                 "frequencies": frequencies,
             },
-            "subcategories": [s.get_report_data(purchase) for s in self.subcategories.all()],
+            "subcategories": self.subcategories.get_rating_data(purchase),
         }
 
 
@@ -54,30 +63,37 @@ class Subcategory(TitledInline):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="subcategories")
     description = RichTextField(_("Description"))
 
+    objects = RatingDataQuerySet.as_manager()
+
     class Meta:
         verbose_name = _("subcategory")
         verbose_name_plural = _("subcategories")
 
-    def get_report_data(self, purchase):
+    def get_rating_data(self, purchase):
         """
-        Returns a serializable object with report data for this subcategory.
+        Returns a serializable object with rating data for this subcategory.
         """
         rating_responses = QuestionResponse.objects.filter(
             question__subcategory=self,
             question__field_type=Question.RATING_FIELD,
             response__purchase=purchase)
-        avg = rating_responses.aggregate(models.Avg("rating"))
+
+        count = rating_responses.count()
+        if not count:
+            return None  # Don't return data if no rating responses exist
+
+        average = rating_responses.aggregate(models.Avg("rating"))["rating__avg"]
         frequencies = purchase.survey.get_frequencies(rating_responses)
         return {
             "id": self.pk,
             "title": self.title,
             "description": self.description,
             "rating": {
-                "count": rating_responses.count(),
-                "average": avg["rating__avg"],
+                "count": count,
+                "average": average,
                 "frequencies": frequencies,
             },
-            "questions": [q.get_report_data(purchase) for q in self.questions.all()],
+            "questions": self.questions.get_rating_data(purchase),
         }
 
 
@@ -99,6 +115,8 @@ class Question(Orderable):
     prompt = models.CharField(_("Prompt"), max_length=300)
     required = models.BooleanField(_("Required"), default=True)
 
+    objects = RatingDataQuerySet.as_manager()
+
     class Meta:
         verbose_name = _("question")
         verbose_name_plural = _("questions")
@@ -106,29 +124,29 @@ class Question(Orderable):
     def __str__(self):
         return self.prompt
 
-    def get_report_data(self, purchase):
+    def get_rating_data(self, purchase):
         """
-        Returns a serializable object with report data for this question.
+        Returns a serializable object with rating data for this question.
         """
         rating_responses = QuestionResponse.objects.filter(
             question=self,
             question__field_type=Question.RATING_FIELD,
             response__purchase=purchase)
-        text_responses = QuestionResponse.objects.filter(
-            question=self,
-            question__field_type=Question.TEXT_FIELD,
-            response__purchase=purchase)
-        avg = rating_responses.aggregate(models.Avg("rating"))
+
+        count = rating_responses.count()
+        if not count:
+            return None  # Don't return data if no rating responses exist
+
+        average = rating_responses.aggregate(models.Avg("rating"))["rating__avg"]
         frequencies = purchase.survey.get_frequencies(rating_responses)
         return {
             "id": self.pk,
             "prompt": self.prompt,
             "rating": {
-                "count": rating_responses.count(),
-                "average": avg["rating__avg"],
+                "count": count,
+                "average": average,
                 "frequencies": frequencies,
             },
-            "text_responses": list(text_responses.values_list("text_response", flat=True)),
         }
 
 
