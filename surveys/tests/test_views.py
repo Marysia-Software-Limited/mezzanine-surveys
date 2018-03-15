@@ -378,6 +378,11 @@ class SurveyPurchaseReportTestCase(SurveyPageTestCase):
         self.assertEqual(q6["rating"]["average"], 3)
         self.assertListEqual(q6["rating"]["frequencies"], [[1, 0], [2, 1], [3, 1], [4, 1]])
 
+        # Subcategory 3 should NOT have a 3rd and 4th question because those are text-only
+        with self.assertRaises(IndexError):
+            sub3["questions"][2]
+            sub3["questions"][3]
+
         # Question 7
         q7 = report["text_questions"][0]
         self.assertListEqual(q7["responses"], ["Text 1", "Text 3", "Text 5"])
