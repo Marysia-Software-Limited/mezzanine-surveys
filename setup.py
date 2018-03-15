@@ -27,7 +27,6 @@ setup(
         'flake8>=3.5,<3.6',
     ],
     install_requires=[
-        'django-wkhtmltopdf==3.1.0',
         'mezzy==2.2.0',
     ]
 )
