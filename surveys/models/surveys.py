@@ -49,18 +49,6 @@ class SurveyPage(Page, RichText):
     def get_rating_choices(self):
         return range(1, self.max_rating + 1)
 
-    def get_frequencies(self, responses):
-        """
-        Get response frequencies as tuples for each rating in this survey.
-        `responses` should be a QuestionResponse queryset.
-        """
-        frequencies = dict(responses.values_list("rating").annotate(models.Count("rating")))
-        # Manually add any rating value with a frequency of zero
-        return [
-            (i, frequencies[i]) if i in frequencies else (i, 0)
-            for i in self.get_rating_choices()
-        ]
-
     def get_requires_payment(self):
         return self.cost > 0
 
@@ -156,8 +144,8 @@ class SurveyPurchase(TimeStamped):
         report = {
             "rating": {
                 "count": rating_responses.count(),
-                "average": rating_responses.aggregate(models.Avg("rating"))["rating__avg"],
-                "frequencies": self.survey.get_frequencies(rating_responses),
+                "average": rating_responses.get_average(),
+                "frequencies": rating_responses.get_frequencies(self.survey.get_rating_choices()),
             },
             "categories": self.survey.categories.get_rating_data(purchase=self),
             "text_questions": text_questions,

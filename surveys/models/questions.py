@@ -11,7 +11,7 @@ from mezzanine.core.models import Orderable, TimeStamped
 
 from mezzy.utils.models import TitledInline
 
-from ..managers import RatingDataQuerySet
+from ..managers import RatingDataQuerySet, QuestionResponseQuerySet
 
 
 class Category(TitledInline):
@@ -41,16 +41,15 @@ class Category(TitledInline):
         if not count:
             return None  # Don't return data if no rating responses exist
 
-        average = rating_responses.aggregate(models.Avg("rating"))["rating__avg"]
-        frequencies = purchase.survey.get_frequencies(rating_responses)
         return {
             "id": self.pk,
             "title": self.title,
             "description": self.description,
             "rating": {
                 "count": count,
-                "average": average,
-                "frequencies": frequencies,
+                "average": rating_responses.get_average(),
+                "frequencies":
+                    rating_responses.get_frequencies(purchase.survey.get_rating_choices()),
             },
             "subcategories": self.subcategories.get_rating_data(purchase),
         }
@@ -82,16 +81,15 @@ class Subcategory(TitledInline):
         if not count:
             return None  # Don't return data if no rating responses exist
 
-        average = rating_responses.aggregate(models.Avg("rating"))["rating__avg"]
-        frequencies = purchase.survey.get_frequencies(rating_responses)
         return {
             "id": self.pk,
             "title": self.title,
             "description": self.description,
             "rating": {
                 "count": count,
-                "average": average,
-                "frequencies": frequencies,
+                "average": rating_responses.get_average(),
+                "frequencies":
+                    rating_responses.get_frequencies(purchase.survey.get_rating_choices()),
             },
             "questions": self.questions.get_rating_data(purchase),
         }
@@ -137,15 +135,14 @@ class Question(Orderable):
         if not count:
             return None  # Don't return data if no rating responses exist
 
-        average = rating_responses.aggregate(models.Avg("rating"))["rating__avg"]
-        frequencies = purchase.survey.get_frequencies(rating_responses)
         return {
             "id": self.pk,
             "prompt": self.prompt,
             "rating": {
                 "count": count,
-                "average": average,
-                "frequencies": frequencies,
+                "average": rating_responses.get_average(),
+                "frequencies":
+                    rating_responses.get_frequencies(purchase.survey.get_rating_choices()),
             },
         }
 
@@ -172,6 +169,8 @@ class QuestionResponse(models.Model):
     question = models.ForeignKey(Question, related_name="responses", on_delete=models.CASCADE)
     rating = models.PositiveSmallIntegerField(_("Rating"), blank=True, null=True)
     text_response = models.TextField(_("Text response"), blank=True)
+
+    objects = QuestionResponseQuerySet.as_manager()
 
     def __str__(self):
         if self.rating is not None:

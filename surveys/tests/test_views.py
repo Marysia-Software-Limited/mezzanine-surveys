@@ -276,6 +276,14 @@ class SurveyPurchaseReportTestCase(SurveyPageTestCase):
                     text_response=value if question.field_type == Question.TEXT_FIELD else ""))
             QuestionResponse.objects.bulk_create(question_responses)
 
+        # Create some more responses on another SurveyPurchase but the same SurveyPage
+        # This shouldn't affect the data on the SurveyPurchase we are testing
+        for i in range(0, 10):
+            get(QuestionResponse,
+                rating=4,
+                question__subcategory__category__survey=self.SURVEY,
+                response__purchase__survey=self.SURVEY)
+
     def test_access(self):
         # Anon users cannot access the report
         self.assertLoginRequired(SurveyPurchaseReport, public_id=self.purchase_id)
