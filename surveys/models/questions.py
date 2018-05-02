@@ -139,6 +139,7 @@ class Question(Orderable):
         return {
             "id": self.pk,
             "prompt": self.prompt,
+            "invert_rating": self.invert_rating,
             "rating": {
                 "count": count,
                 "average": rating_responses.get_average(),

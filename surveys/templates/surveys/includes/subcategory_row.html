@@ -12,7 +12,13 @@
 </tr>
 {% for question in subcategory.questions %}
 	<tr>
-		<td>{{ question.prompt }}</td>
+		{% if question.invert_rating %}
+			<td title="† This is an inverted rating question">
+				<sup>†</sup> {{ question.prompt }}
+			</td>
+		{% else %}
+			<td>{{ question.prompt }}</td>
+		{% endif %}
 		{% for i, freq in question.rating.frequencies %}
 			<td>{{ freq }}</td>
 		{% endfor %}
