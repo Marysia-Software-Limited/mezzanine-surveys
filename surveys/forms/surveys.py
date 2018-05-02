@@ -67,12 +67,14 @@ class SurveyResponseForm(forms.ModelForm):
         question_responses = []
         for question in self.questions:
             value = self.cleaned_data.get("question_%s" % question.pk)
-            question_responses.append(QuestionResponse(
+            response = QuestionResponse(
                 response=survey_response,
                 question=question,
                 rating=value if question.field_type == Question.RATING_FIELD else None,
                 text_response=value if question.field_type == Question.TEXT_FIELD else ""
-            ))
+            )
+            response.normalize_rating()
+            question_responses.append(response)
         QuestionResponse.objects.bulk_create(question_responses)
 
         return survey_response

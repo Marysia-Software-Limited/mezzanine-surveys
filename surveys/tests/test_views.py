@@ -165,14 +165,20 @@ class SurveyResponseCreateTestCase(SurveyPageTestCase):
         """
         Responses to questions in a survey are stored correctly.
         """
-        # Create one text and one rating question
+        # Create one text and two rating question
         text_question = get(
             Question, subcategory__category__survey=self.SURVEY, field_type=Question.TEXT_FIELD)
         rating_question = get(
             Question, subcategory__category__survey=self.SURVEY, field_type=Question.RATING_FIELD,
             required=True)
+        inv_rating_question = get(
+            Question, subcategory__category__survey=self.SURVEY, field_type=Question.RATING_FIELD,
+            invert_rating=True)
         rating_field_key = "question_%s" % rating_question.pk
-        data = {"question_%s" % text_question.pk: "TEST"}
+        data = {
+            "question_%s" % text_question.pk: "TEST",
+            "question_%s" % inv_rating_question.pk: self.SURVEY.max_rating,
+        }
 
         # Rating field should provide choices according to the "max_rating" of the survey
         response = self.assert200(SurveyResponseCreate, public_id=self.PURCHASE_ID)
@@ -207,6 +213,12 @@ class SurveyResponseCreateTestCase(SurveyPageTestCase):
         data[rating_field_key] = self.SURVEY.max_rating
         response = self.post(SurveyResponseCreate, public_id=self.PURCHASE_ID, data=data)
         survey_response = SurveyResponse.objects.get()
+
+        # Verify the inverted rating question was in fact inverted
+        inverted_response = QuestionResponse.objects.get(question=inv_rating_question)
+        self.assertEqual(inverted_response.rating, 1)  # Inverted from SURVEY.max_rating
+        self.assertEqual(inverted_response.text_response, "")
+        self.assertEqual(inverted_response.response, survey_response)
 
         # Verify the rating response was stored correctly
         rating_response = QuestionResponse.objects.get(question=rating_question)

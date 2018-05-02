@@ -112,6 +112,7 @@ class Question(Orderable):
     field_type = models.IntegerField(_("Question type"), choices=QUESTION_TYPES)
     prompt = models.CharField(_("Prompt"), max_length=300)
     required = models.BooleanField(_("Required"), default=True)
+    invert_rating = models.BooleanField(_("Invert rating"), default=False)
 
     objects = RatingDataQuerySet.as_manager()
 
@@ -176,3 +177,11 @@ class QuestionResponse(models.Model):
         if self.rating is not None:
             return str(self.rating)
         return self.text_response
+
+    def normalize_rating(self):
+        """
+        Invert the rating if the question requires it.
+        """
+        if self.rating is not None and self.question.invert_rating:
+            max_rating = self.question.subcategory.category.survey.max_rating
+            self.rating = max_rating - int(self.rating) + 1
