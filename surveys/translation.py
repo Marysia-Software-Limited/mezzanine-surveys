@@ -23,9 +23,9 @@ class SurveyPurchaseTranslationOptions(TranslationOptions):
     fields = ()
 
 
-# @register(SurveyPurchaseCode)
-# class SurveyPurchaseCodeTranslationOptions(TranslationOptions):
-#     fields = ()
+@register(SurveyPurchaseCode)
+class SurveyPurchaseCodeTranslationOptions(TranslationOptions):
+    fields = ()
 
 
 @register(Category)
@@ -33,14 +33,14 @@ class CategoryTranslationOptions(TranslationOptions):
     fields = ("description",)
 
 
-# @register(Question)
-# class QuestionTranslationOptions(TranslationOptions):
-#     fields = ()
+@register(Question)
+class QuestionTranslationOptions(TranslationOptions):
+    fields = ()
 
 
-# @register(SurveyResponse)
-# class SurveyResponseTranslationOptions(TranslationOptions):
-#     fields = ()
+@register(SurveyResponse)
+class SurveyResponseTranslationOptions(TranslationOptions):
+    fields = ()
 
 
 @register(QuestionResponse)
