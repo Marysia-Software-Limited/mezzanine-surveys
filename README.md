@@ -19,7 +19,7 @@ Additionally, admin users can control the Categories, Subcategories, and Purchas
 1. Include `"surveys.urls"` before Mezzanine's catch-all patterns in `urls.py`:
 
     ```python
-    url("^surveys/", include("surveys.urls", namespace="surveys")),
+    path("surveys/", include("surveys.urls", namespace="surveys")),
     ```
     You can also replace `surveys/` with any other prefix you prefer.
 
