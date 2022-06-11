@@ -6,6 +6,8 @@
 .vscode
 .pytest_cache
 
+.idea
+
 ### VisualStudioCode template
 .vscode/*
 !.vscode/settings.json
