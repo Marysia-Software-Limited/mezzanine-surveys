@@ -22,11 +22,13 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     tests_require=[
-        'pytest-django>=3.1,<3.2',
-        'django-dynamic-fixture>=2.0,<2.1',
-        'flake8>=3.5,<3.6',
+        'pytest-django',
+        'django-dynamic-fixture',
+        'flake8',
+        'Django>4',
+        'mezzanine>=6.0'
     ],
     install_requires=[
-        'mezzy==2.2.0',
+        'mezzy',
     ]
 )

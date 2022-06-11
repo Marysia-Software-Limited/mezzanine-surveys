@@ -8,11 +8,11 @@ import uuid
 from builtins import range
 
 from django.db import models
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.core.validators import MinValueValidator, MaxValueValidator
-from django.utils.encoding import python_2_unicode_compatible
+# from django.utils.encoding import python_2_unicode_compatible
 from django.utils.timezone import now
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 from mezzanine.conf import settings
 from mezzanine.core.fields import RichTextField
@@ -59,12 +59,12 @@ class SurveyPage(Page, RichText):
         verbose_name_plural = _("survey pages")
 
 
-@python_2_unicode_compatible
+# @python_2_unicode_compatible
 class SurveyPurchaseCode(models.Model):
     """
     Code to gain access to a Survey without paying.
     """
-    survey = models.ForeignKey(SurveyPage, related_name="purchase_codes")
+    survey = models.ForeignKey(SurveyPage, related_name="purchase_codes", on_delete=models.CASCADE)
     code = models.CharField(
         _("Code"), max_length=20, blank=True,
         help_text=_("If left blank it will be automatically generated"))
@@ -87,7 +87,7 @@ class SurveyPurchaseCode(models.Model):
         super(SurveyPurchaseCode, self).save(*args, **kwargs)
 
 
-@python_2_unicode_compatible
+# @python_2_unicode_compatible
 class SurveyPurchase(TimeStamped):
     """
     A record of a user purchasing a Survey.

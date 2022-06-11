@@ -3,8 +3,8 @@
 from __future__ import absolute_import, unicode_literals
 
 from django.db import models
-from django.utils.encoding import python_2_unicode_compatible
-from django.utils.translation import ugettext_lazy as _
+
+from django.utils.translation import gettext_lazy as _
 
 from mezzanine.core.fields import RichTextField
 from mezzanine.core.models import Orderable, TimeStamped
@@ -95,7 +95,7 @@ class Subcategory(TitledInline):
         }
 
 
-@python_2_unicode_compatible
+# @python_2_unicode_compatible
 class Question(Orderable):
     """
     A question on a SurveyPage.
@@ -149,7 +149,7 @@ class Question(Orderable):
         }
 
 
-@python_2_unicode_compatible
+# @python_2_unicode_compatible
 class SurveyResponse(TimeStamped):
     """
     Collection of all responses related to a Purchase.
@@ -161,7 +161,7 @@ class SurveyResponse(TimeStamped):
         return str(self.created)
 
 
-@python_2_unicode_compatible
+# @python_2_unicode_compatible
 class QuestionResponse(models.Model):
     """
     Response to a single Question.

@@ -1,6 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
-from django.conf.urls import url
+from django.urls import re_path
 
 from mezzanine.conf import settings
 
@@ -14,14 +14,14 @@ purchase_create_view = import_view(settings.SURVEYS_PURCHASE_CREATE_VIEW)
 purchase_report_view = import_view(settings.SURVEYS_PURCHASE_REPORT_VIEW)
 
 urlpatterns = [
-    url("^purchase/(?P<slug>.*)/$",
-        purchase_create_view, name="purchase_create"),
-    url("^manage/(?P<public_id>%s)/$" % UUID_RE,
-        views.SurveyPurchaseDetail.as_view(), name="purchase_detail"),
-    url("^take/(?P<public_id>%s)/$" % UUID_RE,
-        views.SurveyResponseCreate.as_view(), name="response_create"),
-    url("^take/(?P<public_id>%s)/complete/$" % UUID_RE,
-        views.SurveyResponseComplete.as_view(), name="response_complete"),
-    url("^report/(?P<public_id>%s)/$" % UUID_RE,
-        purchase_report_view, name="purchase_report"),
+    re_path("^purchase/(?P<slug>.*)/$",
+            purchase_create_view, name="purchase_create"),
+    re_path("^manage/(?P<public_id>%s)/$" % UUID_RE,
+            views.SurveyPurchaseDetail.as_view(), name="purchase_detail"),
+    re_path("^take/(?P<public_id>%s)/$" % UUID_RE,
+            views.SurveyResponseCreate.as_view(), name="response_create"),
+    re_path("^take/(?P<public_id>%s)/complete/$" % UUID_RE,
+            views.SurveyResponseComplete.as_view(), name="response_complete"),
+    re_path("^report/(?P<public_id>%s)/$" % UUID_RE,
+            purchase_report_view, name="purchase_report"),
 ]
